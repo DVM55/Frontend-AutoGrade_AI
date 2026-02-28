@@ -1,0 +1,9 @@
+/* Hover effect for sidebar items */
+.hover-bg-light:hover {
+  background-color: #f8f9fa;
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.2s ease;
+}

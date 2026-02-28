@@ -1,0 +1,378 @@
+import React, { useEffect, useState } from "react";
+import {
+  deleteAccount,
+  toggleLockAccount,
+  getUsers,
+} from "../../service/account.service";
+import { toast } from "react-toastify";
+
+const ConfirmModal = ({
+  title,
+  message,
+  confirmLabel,
+  confirmClass,
+  onConfirm,
+  onClose,
+}) => (
+  <div
+    className="modal d-block"
+    style={{ background: "rgba(0,0,0,0.45)" }}
+    onClick={(e) => e.target === e.currentTarget && onClose()}
+  >
+    <div
+      className="modal-dialog modal-dialog-centered"
+      style={{ maxWidth: 420 }}
+    >
+      <div
+        className="modal-content border-0 shadow"
+        style={{ borderRadius: 16 }}
+      >
+        <div className="modal-header border-0 pb-0 px-4 pt-4">
+          <h6 className="modal-title fw-bold">{title}</h6>
+          <button className="btn-close" onClick={onClose} />
+        </div>
+        <div
+          className="modal-body px-4 py-3 text-secondary"
+          style={{ fontSize: 14 }}
+        >
+          {message}
+        </div>
+        <div className="modal-footer border-0 px-4 pb-4 pt-0">
+          <button
+            className="btn btn-secondary"
+            style={{ borderRadius: 8 }}
+            onClick={onClose}
+          >
+            Hủy
+          </button>
+          <button
+            className={`btn ${confirmClass}`}
+            style={{ borderRadius: 8 }}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const User = () => {
+  const [users, setUsers] = useState([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [confirm, setConfirm] = useState(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchBy, setSearchBy] = useState("username");
+  const size = 10;
+
+  const fetchUsers = async (p = 0, keyword = "", by = searchBy) => {
+    try {
+      setLoading(true);
+      const res = await getUsers({
+        page: p,
+        size,
+        username: by === "username" ? keyword : "",
+        email: by === "email" ? keyword : "",
+      });
+      const data = res.data;
+      setUsers(data.content || []);
+      setTotalPages(data.totalPages || 0);
+      setTotalElements(data.totalElements || 0);
+      setPage(data.number || 0);
+    } catch {
+      toast.error("Không thể tải danh sách người dùng");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers(0, "", "username");
+  }, []);
+
+  const handleSearch = () => fetchUsers(0, searchInput, searchBy);
+
+  const handleDelete = async () => {
+    try {
+      await deleteAccount(confirm.user.id);
+      toast.success("Đã xóa tài khoản");
+      setConfirm(null);
+      fetchUsers(page, searchInput);
+    } catch {
+      toast.error("Xóa thất bại");
+    }
+  };
+
+  const handleToggleLock = async () => {
+    try {
+      await toggleLockAccount(confirm.user.id);
+      toast.success(
+        confirm.user.locked ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản",
+      );
+      setConfirm(null);
+      fetchUsers(page, searchInput);
+    } catch {
+      toast.error("Thao tác thất bại");
+    }
+  };
+
+  return (
+    <div className="container-fluid ">
+      {/* ── Toolbar ── */}
+      <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3">
+        <div className="input-group" style={{ maxWidth: 600 }}>
+          <input
+            type="text"
+            className="form-control"
+            style={{ fontSize: 14, height: 42 }}
+            placeholder={
+              searchBy === "username" ? "Tìm theo tên..." : "Tìm theo email..."
+            }
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          />
+          <select
+            className="form-select"
+            style={{ maxWidth: 140, fontSize: 14, height: 42 }}
+            value={searchBy}
+            onChange={(e) => {
+              setSearchBy(e.target.value);
+              setSearchInput("");
+            }}
+          >
+            <option value="username">Theo tên</option>
+            <option value="email">Theo email</option>
+          </select>
+          <button
+            className="btn btn-primary d-flex align-items-center gap-2"
+            style={{ height: 42, fontSize: 14, whiteSpace: "nowrap" }}
+            onClick={handleSearch}
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="spinner-border spinner-border-sm" />
+            ) : (
+              <i className="bi bi-search" />
+            )}
+            Tìm kiếm
+          </button>
+        </div>
+      </div>
+
+      {totalElements > 0 && (
+        <div className="text-muted mb-3" style={{ fontSize: 13 }}>
+          {totalElements} kết quả tìm thấy
+        </div>
+      )}
+
+      {/* ── Table ── */}
+      <div className="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div className="table-responsive">
+          <table className="table align-middle mb-0">
+            <thead className="table-light align-middle">
+              <tr style={{ height: 48 }}>
+                <th
+                  className="text-uppercase text-secondary fw-semibold ps-4"
+                  style={{ fontSize: 11, letterSpacing: ".06em", width: 64 }}
+                >
+                  STT
+                </th>
+                <th
+                  className="text-uppercase text-secondary fw-semibold"
+                  style={{ fontSize: 11, letterSpacing: ".06em" }}
+                >
+                  Email
+                </th>
+                <th
+                  className="text-uppercase text-secondary fw-semibold"
+                  style={{ fontSize: 11, letterSpacing: ".06em" }}
+                >
+                  Tên
+                </th>
+                <th
+                  className="text-uppercase text-secondary fw-semibold"
+                  style={{ fontSize: 11, letterSpacing: ".06em", width: 200 }}
+                >
+                  Trạng thái
+                </th>
+                <th
+                  className="text-uppercase text-secondary fw-semibold"
+                  style={{ fontSize: 11, letterSpacing: ".06em", width: 110 }}
+                >
+                  Hành động
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-5">
+                    <span className="spinner-border text-primary" />
+                  </td>
+                </tr>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-5 text-muted">
+                    <div style={{ fontSize: 48 }}>👤</div>
+                    <div className="fw-semibold mt-2">
+                      Không có người dùng nào
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                users.map((u, idx) => (
+                  <tr key={u.id} style={{ height: 64 }}>
+                    <td className="text-muted ps-4" style={{ fontSize: 14 }}>
+                      {page * size + idx + 1}
+                    </td>
+
+                    <td style={{ fontSize: 14 }}>{u.email}</td>
+
+                    <td>
+                      <span className="fw-medium" style={{ fontSize: 15 }}>
+                        {u.username}
+                      </span>
+                    </td>
+
+                    <td>
+                      {u.locked ? (
+                        <span
+                          className="badge rounded-pill px-3 py-2"
+                          style={{
+                            background: "#fce8e6",
+                            color: "#d93025",
+                            fontSize: 12,
+                          }}
+                        >
+                          <i className="bi bi-lock-fill me-1" />
+                          Đã khóa
+                        </span>
+                      ) : (
+                        <span
+                          className="badge rounded-pill px-3 py-2"
+                          style={{
+                            background: "#e6f4ea",
+                            color: "#1e8e3e",
+                            fontSize: 12,
+                          }}
+                        >
+                          <i className="bi bi-check-circle-fill me-1" />
+                          Hoạt động
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="pe-3">
+                      <div className="d-flex align-items-center gap-2 justify-content-end">
+                        <button
+                          className="btn btn-sm d-flex align-items-center gap-1"
+                          style={{
+                            borderRadius: 8,
+                            fontSize: 13,
+                            padding: "6px 12px",
+                            background: u.locked ? "#e6f4ea" : "#fff8e1",
+                            color: u.locked ? "#1e8e3e" : "#f59e0b",
+                            border: u.locked
+                              ? "1px solid #ceead6"
+                              : "1px solid #fde68a",
+                          }}
+                          onClick={() => setConfirm({ type: "lock", user: u })}
+                        >
+                          <i
+                            className={`bi ${u.locked ? "bi-unlock-fill" : "bi-lock-fill"}`}
+                          />
+                        </button>
+                        <button
+                          className="btn btn-sm d-flex align-items-center gap-1"
+                          style={{
+                            borderRadius: 8,
+                            fontSize: 13,
+                            padding: "6px 12px",
+                            background: "#fce8e6",
+                            color: "#d93025",
+                            border: "1px solid #f5c6c2",
+                          }}
+                          onClick={() =>
+                            setConfirm({ type: "delete", user: u })
+                          }
+                        >
+                          <i className="bi bi-trash3-fill" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="d-flex align-items-center justify-content-center gap-3 py-3 border-top">
+            <button
+              className="btn btn-sm btn-outline-secondary"
+              style={{ borderRadius: 8 }}
+              disabled={page === 0}
+              onClick={() => fetchUsers(page - 1, searchInput)}
+            >
+              ← Trước
+            </button>
+            <span className="text-muted" style={{ fontSize: 13 }}>
+              Trang {page + 1} / {totalPages}
+            </span>
+            <button
+              className="btn btn-sm btn-outline-secondary"
+              style={{ borderRadius: 8 }}
+              disabled={page + 1 >= totalPages}
+              onClick={() => fetchUsers(page + 1, searchInput)}
+            >
+              Tiếp →
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Confirm modals */}
+      {confirm?.type === "delete" && (
+        <ConfirmModal
+          title="Xác nhận xóa"
+          message={
+            <>
+              Bạn có chắc muốn xóa tài khoản{" "}
+              <strong>{confirm.user.username}</strong>? Hành động này không thể
+              hoàn tác.
+            </>
+          }
+          confirmLabel="Xóa"
+          confirmClass="btn-danger"
+          onConfirm={handleDelete}
+          onClose={() => setConfirm(null)}
+        />
+      )}
+      {confirm?.type === "lock" && (
+        <ConfirmModal
+          title={confirm.user.locked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
+          message={
+            <>
+              Bạn có chắc muốn {confirm.user.locked ? "mở khóa" : "khóa"} tài
+              khoản <strong>{confirm.user.username}</strong>?
+            </>
+          }
+          confirmLabel={confirm.user.locked ? "Mở khóa" : "Khóa"}
+          confirmClass={confirm.user.locked ? "btn-success" : "btn-warning"}
+          onConfirm={handleToggleLock}
+          onClose={() => setConfirm(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default User;
