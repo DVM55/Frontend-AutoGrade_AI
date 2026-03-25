@@ -94,12 +94,12 @@ const Teacher = () => {
         email: by === "email" ? keyword : "",
       });
 
-      const data = res.data;
+      console.log("Fetched teachers:", res);
 
-      setTeachers(data.content || []);
-      setTotalPages(data.totalPages || 0);
-      setTotalElements(data.totalElements || 0);
-      setPage(data.number || 0);
+      setTeachers(res.data || []);
+      setTotalPages(res.meta.totalPages || 0);
+      setTotalElements(res.meta.totalElements || 0);
+      setPage(res.meta.currentPage - 1 || 0);
     } catch {
       toast.error("Không thể tải danh sách giảng viên");
     } finally {
@@ -119,8 +119,10 @@ const Teacher = () => {
      Delete
   ========================= */
   const handleDelete = async () => {
+    if (!confirm?.teacher?.id) return;
+
     try {
-      await deleteAccount(confirm.user.id);
+      await deleteAccount(confirm.teacher.id);
       toast.success("Đã xóa tài khoản");
       setConfirm(null);
       fetchTeachers(page, searchInput);
@@ -133,10 +135,12 @@ const Teacher = () => {
      Toggle Lock
   ========================= */
   const handleToggleLock = async () => {
+    if (!confirm?.teacher?.id) return;
+
     try {
-      await toggleLockAccount(confirm.user.id);
+      await toggleLockAccount(confirm.teacher.id);
       toast.success(
-        confirm.user.locked ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản",
+        confirm.teacher.locked ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản",
       );
       setConfirm(null);
       fetchTeachers(page, searchInput);
@@ -246,7 +250,6 @@ const Teacher = () => {
               ) : teachers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-5 text-muted">
-                    <div style={{ fontSize: 48 }}>👨‍🏫</div>
                     <div className="fw-semibold mt-2">
                       Không có giảng viên nào
                     </div>
@@ -255,45 +258,80 @@ const Teacher = () => {
               ) : (
                 teachers.map((teacher, idx) => (
                   <tr key={teacher.id} style={{ height: 64 }}>
-                    <td className="ps-4">{page * size + idx + 1}</td>
+                    <td className="text-muted ps-4" style={{ fontSize: 14 }}>
+                      {page * size + idx + 1}
+                    </td>
 
-                    <td>{teacher.email}</td>
+                    <td style={{ fontSize: 14 }}>{teacher.email}</td>
 
-                    <td className="fw-medium">{teacher.username}</td>
+                    <td>
+                      <span className="fw-medium" style={{ fontSize: 15 }}>
+                        {teacher.username}
+                      </span>
+                    </td>
 
                     <td>
                       {teacher.locked ? (
-                        <span className="badge bg-danger-subtle text-danger">
+                        <span
+                          className="badge rounded-pill px-3 py-2"
+                          style={{
+                            background: "#fce8e6",
+                            color: "#d93025",
+                            fontSize: 12,
+                          }}
+                        >
                           <i className="bi bi-lock-fill me-1" />
                           Đã khóa
                         </span>
                       ) : (
-                        <span className="badge bg-success-subtle text-success">
+                        <span
+                          className="badge rounded-pill px-3 py-2"
+                          style={{
+                            background: "#e6f4ea",
+                            color: "#1e8e3e",
+                            fontSize: 12,
+                          }}
+                        >
                           <i className="bi bi-check-circle-fill me-1" />
                           Hoạt động
                         </span>
                       )}
                     </td>
 
-                    <td>
-                      <div className="d-flex gap-2 justify-content-end">
+                    <td className="pe-3">
+                      <div className="d-flex align-items-center gap-2 justify-content-end">
                         <button
-                          className="btn btn-sm btn-outline-warning"
+                          className="btn btn-sm d-flex align-items-center gap-1"
+                          style={{
+                            borderRadius: 8,
+                            fontSize: 13,
+                            padding: "6px 12px",
+                            background: teacher.locked ? "#e6f4ea" : "#fff8e1",
+                            color: teacher.locked ? "#1e8e3e" : "#f59e0b",
+                            border: teacher.locked
+                              ? "1px solid #ceead6"
+                              : "1px solid #fde68a",
+                          }}
                           onClick={() =>
-                            setConfirm({ type: "lock", user: teacher })
+                            setConfirm({ type: "lock", teacher: teacher })
                           }
                         >
                           <i
-                            className={`bi ${
-                              teacher.locked ? "bi-unlock-fill" : "bi-lock-fill"
-                            }`}
+                            className={`bi ${teacher.locked ? "bi-unlock-fill" : "bi-lock-fill"}`}
                           />
                         </button>
-
                         <button
-                          className="btn btn-sm btn-outline-danger"
+                          className="btn btn-sm d-flex align-items-center gap-1"
+                          style={{
+                            borderRadius: 8,
+                            fontSize: 13,
+                            padding: "6px 12px",
+                            background: "#fce8e6",
+                            color: "#d93025",
+                            border: "1px solid #f5c6c2",
+                          }}
                           onClick={() =>
-                            setConfirm({ type: "delete", user: teacher })
+                            setConfirm({ type: "delete", teacher: teacher })
                           }
                         >
                           <i className="bi bi-trash3-fill" />
@@ -340,7 +378,7 @@ const Teacher = () => {
           message={
             <>
               Bạn có chắc muốn xóa tài khoản{" "}
-              <strong>{confirm.user.username}</strong>?
+              <strong>{confirm.teacher.username}</strong>?
             </>
           }
           confirmLabel="Xóa"
@@ -352,15 +390,17 @@ const Teacher = () => {
 
       {confirm?.type === "lock" && (
         <ConfirmModal
-          title={confirm.user.locked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
+          title={
+            confirm.teacher.locked ? "Mở khóa tài khoản" : "Khóa tài khoản"
+          }
           message={
             <>
-              Bạn có chắc muốn {confirm.user.locked ? "mở khóa" : "khóa"} tài
-              khoản <strong>{confirm.user.username}</strong>?
+              Bạn có chắc muốn {confirm.teacher.locked ? "mở khóa" : "khóa"} tài
+              khoản <strong>{confirm.teacher.username}</strong>?
             </>
           }
-          confirmLabel={confirm.user.locked ? "Mở khóa" : "Khóa"}
-          confirmClass={confirm.user.locked ? "btn-success" : "btn-warning"}
+          confirmLabel={confirm.teacher.locked ? "Mở khóa" : "Khóa"}
+          confirmClass={confirm.teacher.locked ? "btn-success" : "btn-warning"}
           onConfirm={handleToggleLock}
           onClose={() => setConfirm(null)}
         />

@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import avatarImg from "../../assets/avatarImg.png";
 import { useAuth } from "../../context/AuthContext";
-import { getProfile } from "../../service/account.service";
 
 const Header = () => {
   const { user, setUser, logout } = useAuth();
@@ -9,26 +8,6 @@ const Header = () => {
   const handleLogout = async () => {
     await logout();
   };
-
-  const fetchProfile = async () => {
-    try {
-      const res = await getProfile();
-
-      // 👇 merge dữ liệu mới vào user cũ
-      setUser((prev) => ({
-        ...prev,
-        ...res.data,
-      }));
-    } catch (error) {
-      console.log("Lỗi lấy profile:", error?.response?.data);
-    }
-  };
-
-  useEffect(() => {
-    if (!user?.id) {
-      fetchProfile();
-    }
-  }, []);
 
   return (
     <header

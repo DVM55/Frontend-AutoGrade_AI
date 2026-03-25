@@ -40,9 +40,9 @@ const Class = () => {
         classCode: searchBy === "classCode" ? keyword : "",
       });
 
-      setClasses(res.data.content || []);
-      setTotalPages(res.data.totalPages || 0);
-      setTotalElements(res.data.totalElements || 0);
+      setClasses(res.data || []);
+      setTotalPages(res.meta.totalPages || 0);
+      setTotalElements(res.meta.totalElements || 0);
       setCurrentPage(page);
     } catch (error) {
       console.error(error);

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getClassMembers } from "../../service/classMember.service";
+import avatarImg from "../../assets/avatarImg.png";
 
 const ClassMemberUser = () => {
   const { classId } = useParams();
@@ -30,12 +31,10 @@ const ClassMemberUser = () => {
         email: searchBy === "email" ? keyword : "",
       });
 
-      const pageData = res.data;
-
-      setStudents(pageData.content || []);
-      setTotalPages(pageData.totalPages || 0);
-      setTotalElements(pageData.totalElements || 0);
-      setCurrentPage(page);
+      setStudents(res.data || []);
+      setTotalPages(res.meta.totalPages || 0);
+      setTotalElements(res.meta.totalItems || 0);
+      setCurrentPage(page || 0);
     } catch (error) {
       console.error(error);
       setStudents([]);
@@ -129,10 +128,14 @@ const ClassMemberUser = () => {
               <span className="me-3">{currentPage * size + index + 1}</span>
 
               <img
-                src={student.avatarUrl}
-                alt={student.username}
+                src={student.avatarUrl || avatarImg}
+                alt="User Avatar"
                 className="rounded-circle me-3"
                 style={{ width: 40, height: 40, objectFit: "cover" }}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = avatarImg;
+                }}
               />
 
               <div className="flex-grow-1">

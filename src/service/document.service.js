@@ -24,8 +24,3 @@ export const updateDocument = (documentId, data) => {
 export const deleteDocument = (documentId) => {
   return api.delete(`/document/${documentId}`);
 };
-
-// ================= GET DOCUMENT DETAIL =================
-export const getDocumentById = (documentId) => {
-  return api.get(`/document/${documentId}`);
-};

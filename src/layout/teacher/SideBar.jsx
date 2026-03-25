@@ -13,7 +13,11 @@ const SideBar = () => {
       label: "Bài kiểm tra",
       path: "/teacher/exams",
     },
-
+    {
+      icon: "bi-patch-question",
+      label: "Ngân hàng câu hỏi",
+      path: "/teacher/question-bank",
+    },
     {
       icon: "bi-person-circle",
       label: "Hồ sơ cá nhân",

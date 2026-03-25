@@ -143,6 +143,7 @@ const JoinClass = () => {
       try {
         setLoading(true);
         const res = await getClassByCode(classCode);
+        console.log("Fetch class by code response:", res);
 
         // Nếu backend trả ApiResponse thì dùng res.data.data
         setClassItem(res.data.data || res.data);
@@ -167,7 +168,8 @@ const JoinClass = () => {
       // ✅ Nếu chưa tham gia → gọi API join
       setJoiningId(item.id);
 
-      await joinClass(item.classCode);
+      const response = await joinClass(item.classCode);
+      console.log("Join class response:", response);
 
       toast.success("Đã gửi yêu cầu tham gia lớp");
 

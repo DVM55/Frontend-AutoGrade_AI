@@ -5,6 +5,7 @@ import {
   getClassMembers,
   deleteClassMember,
 } from "../../service/classMember.service";
+import avatarImg from "../../assets/avatarImg.png";
 
 const ClassMember = () => {
   const { classId } = useParams();
@@ -35,11 +36,9 @@ const ClassMember = () => {
         email: searchBy === "email" ? keyword : "",
       });
 
-      const pageData = res.data;
-
-      setStudents(pageData.content || []);
-      setTotalPages(pageData.totalPages || 0);
-      setTotalElements(pageData.totalElements || 0);
+      setStudents(res.data || []);
+      setTotalPages(res.meta.totalPages || 0);
+      setTotalElements(res.meta.totalElements || 0);
       setCurrentPage(page);
     } catch (error) {
       console.error(error);
@@ -149,10 +148,14 @@ const ClassMember = () => {
               <span className="me-3">{currentPage * size + index + 1}</span>
 
               <img
-                src={student.avatarUrl}
-                alt={student.username}
+                src={student.avatarUrl || avatarImg}
+                alt="User Avatar"
                 className="rounded-circle me-3"
                 style={{ width: 40, height: 40, objectFit: "cover" }}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = avatarImg;
+                }}
               />
 
               <div className="flex-grow-1">

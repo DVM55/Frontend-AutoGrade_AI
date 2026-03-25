@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getClasses, getClassByCode } from "../../service/class.service";
+import { joinClass } from "../../service/classMember.service";
 
 const COLORS = [
   "#1a73e8",
@@ -179,11 +180,11 @@ const ClassUser = () => {
     try {
       setLoading(true);
       const res = await getClasses({ page: p, size: 9 });
-      const data = res.data;
-      setClasses(data.content || []);
-      setTotalPages(data.totalPages || 0);
-      setTotalElements(data.totalElements || 0);
-      setPage(data.number || 0);
+
+      setClasses(res.data || []);
+      setTotalPages(res.meta.totalPages || 0);
+      setTotalElements(res.meta.totalItems || 0);
+      setPage(p || 0);
     } catch {
       toast.error("Không thể tải danh sách lớp");
     } finally {
@@ -225,16 +226,35 @@ const ClassUser = () => {
 
   // TODO: gọi API join class thực tế ở đây
   const handleJoin = async (item) => {
+    if (!item?.classCode) {
+      toast.error("Không tìm thấy mã lớp");
+      return;
+    }
+
     try {
       setJoiningId(item.id);
-      // await joinClass(item.id);
+
+      // ✅ GỬI classCode
+      await joinClass(item.classCode);
+
       toast.success("Đã gửi yêu cầu tham gia lớp");
-      // Cập nhật trạng thái sang PENDING_APPROVAL sau khi gửi
+
+      // ✅ update UI sau khi join
+
       setSearchResult((prev) =>
-        prev ? { ...prev, joinStatus: "PENDING_APPROVAL" } : prev,
+        prev
+          ? {
+              ...prev,
+              joinStatus: "PENDING_APPROVAL",
+            }
+          : prev,
       );
-    } catch {
-      toast.error("Tham gia thất bại");
+    } catch (error) {
+      console.error("Join error:", error);
+
+      const message = error?.response?.data?.message || "Tham gia thất bại";
+
+      toast.error(message);
     } finally {
       setJoiningId(null);
     }
@@ -248,17 +268,14 @@ const ClassUser = () => {
       {/* Header row */}
       <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
-          <h4 className="fw-bold mb-0" style={{ color: "#1a1a2e" }}>
-            Danh sách lớp
-          </h4>
           <span className="text-muted" style={{ fontSize: 13 }}>
             {isSearchMode ? (
               <>
                 Kết quả tìm kiếm cho <strong>"{searchCode}"</strong>
               </>
-            ) : (
+            ) : totalElements > 0 ? (
               <>{totalElements} lớp học</>
-            )}
+            ) : null}
           </span>
         </div>
 
@@ -316,7 +333,6 @@ const ClassUser = () => {
         </div>
       ) : displayList.length === 0 ? (
         <div className="text-center py-5 text-muted">
-          <div style={{ fontSize: 56 }}>📭</div>
           <div className="fw-semibold mt-2">Không có lớp nào</div>
           <div style={{ fontSize: 13 }}>Thử tìm kiếm bằng mã lớp</div>
         </div>

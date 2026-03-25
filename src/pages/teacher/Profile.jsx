@@ -315,6 +315,7 @@ const Profile = () => {
       value: genderLabel[user?.gender] || null,
       rawValue: user?.gender || "",
       options: [
+        { value: "", label: "Chọn giới tính" },
         { value: "MALE", label: "Nam" },
         { value: "FEMALE", label: "Nữ" },
         { value: "OTHER", label: "Khác" },

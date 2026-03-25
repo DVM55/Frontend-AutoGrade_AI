@@ -110,7 +110,7 @@ const Login = () => {
             </label>
             <div className="position-relative">
               <input
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? "password" : "text"}
                 className={`form-control ${errors.password ? "is-invalid" : ""}`}
                 id="password"
                 name="password"
@@ -125,7 +125,7 @@ const Login = () => {
                 style={{ zIndex: 10 }}
               >
                 <i
-                  className={showPassword ? "bi bi-eye" : "bi bi-eye-slash"}
+                  className={showPassword ? "bi bi-eye-slash" : "bi bi-eye"}
                 ></i>
               </button>
             </div>

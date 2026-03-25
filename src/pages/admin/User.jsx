@@ -78,11 +78,10 @@ const User = () => {
         username: by === "username" ? keyword : "",
         email: by === "email" ? keyword : "",
       });
-      const data = res.data;
-      setUsers(data.content || []);
-      setTotalPages(data.totalPages || 0);
-      setTotalElements(data.totalElements || 0);
-      setPage(data.number || 0);
+      setUsers(res.data || []);
+      setTotalPages(res.meta.totalPages || 0);
+      setTotalElements(res.meta.totalElements || 0);
+      setPage(res.meta.currentPage - 1 || 0);
     } catch {
       toast.error("Không thể tải danh sách người dùng");
     } finally {
@@ -219,7 +218,6 @@ const User = () => {
               ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-5 text-muted">
-                    <div style={{ fontSize: 48 }}>👤</div>
                     <div className="fw-semibold mt-2">
                       Không có người dùng nào
                     </div>

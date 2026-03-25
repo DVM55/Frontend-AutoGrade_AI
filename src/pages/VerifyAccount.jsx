@@ -93,7 +93,6 @@ const VerifyAccount = () => {
   /* ================= VERIFY ACCOUNT ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validate()) return;
 
     const otpString = otp.join("");
@@ -103,30 +102,12 @@ const VerifyAccount = () => {
       const res = await verifyAccount({ email, otp: otpString });
       const { accessToken, refreshToken } = res.data;
 
-      // login vào context
-      login(accessToken, refreshToken);
-
-      // decode JWT an toàn hơn
-      const payload = JSON.parse(
-        decodeURIComponent(
-          atob(accessToken.split(".")[1])
-            .split("")
-            .map(function (c) {
-              return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-            })
-            .join(""),
-        ),
-      );
-
-      toast.success("Xác thực thành công!");
-
-      if (payload.role === "TEACHER") {
-        navigate("/teacher");
-      } else if (payload.role === "ADMIN") {
-        navigate("/admin");
-      } else {
-        navigate("/user");
-      }
+      // ✅ login với callback để navigate theo role
+      await login(accessToken, refreshToken, (userData) => {
+        if (userData.role === "TEACHER") navigate("/teacher");
+        else if (userData.role === "ADMIN") navigate("/admin");
+        else navigate("/user");
+      });
     } catch (error) {
       toast.error(
         "Mã OTP không hợp lệ: " +
@@ -136,7 +117,6 @@ const VerifyAccount = () => {
       setLoading(false);
     }
   };
-
   /* ================= RESEND OTP ================= */
   const handleResend = async () => {
     if (!canResend || resending) return;
