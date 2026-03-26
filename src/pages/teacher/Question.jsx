@@ -16,6 +16,7 @@ import {
   deleteQuestion,
   updateQuestionsByIds,
 } from "../../service/question.service";
+import UpdateQuestion from "./UpdateQuestion";
 
 const MODE_ALL = "all";
 const MODE_UNCLASSIFIED = "unclassified";
@@ -283,6 +284,7 @@ const ConfirmModal = ({ message, loading, onConfirm, onCancel }) => {
 
 const Question = forwardRef((props, ref) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
+
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [showFilter, setShowFilter] = useState(false);
@@ -292,6 +294,9 @@ const Question = forwardRef((props, ref) => {
   const [filterGroup, setFilterGroup] = useState(null);
   const [filterType, setFilterType] = useState(null);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+
+  const [showUpdateQuestionModal, setShowUpdateQuestionModal] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState(null);
 
   const [appliedFilter, setAppliedFilter] = useState({
     mode: MODE_ALL,
@@ -503,6 +508,11 @@ const Question = forwardRef((props, ref) => {
     } finally {
       setEditLoading(false);
     }
+  };
+
+  const handleEditSingle = (question) => {
+    setEditingQuestion(question);
+    setShowUpdateQuestionModal(true);
   };
 
   const isDisabled = filterMode === MODE_UNCLASSIFIED;
@@ -986,9 +996,7 @@ const Question = forwardRef((props, ref) => {
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={() => {
-                /* TODO: wire up edit modal */
-              }}
+              onClick={() => handleEditSingle(question)}
               title="Sửa"
               style={{
                 width: "28px",
@@ -1272,6 +1280,22 @@ const Question = forwardRef((props, ref) => {
           }}
         />
       )}
+
+      {showUpdateQuestionModal && editingQuestion && (
+        <UpdateQuestion
+          question={editingQuestion}
+          onClose={() => {
+            setShowUpdateQuestionModal(false);
+            setEditingQuestion(null);
+          }}
+          onSuccess={() => {
+            setShowUpdateQuestionModal(false);
+            setEditingQuestion(null);
+            setInitialLoading(true);
+          }}
+        />
+      )}
+
       {showCategoryModal && (
         <CategorySearch
           value={filterCategory}

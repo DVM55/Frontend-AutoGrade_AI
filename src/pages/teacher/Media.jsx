@@ -582,20 +582,27 @@ export default function Media({ show, onClose, onSelect }) {
     [loadingMore],
   );
 
-  // ── Reset khi đổi tab ─────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!show) return;
-    exitSelectMode();
-    loadFirst(tab, search);
-  }, [tab, show]);
+  const isFirstMount = useRef(true);
 
-  // ── Debounce search ───────────────────────────────────────────────────────
+  // Effect search — chỉ chạy khi user thực sự gõ
   useEffect(() => {
     if (!show) return;
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return; // ← bỏ qua lần mount đầu
+    }
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => loadFirst(tab, search), 400);
     return () => clearTimeout(searchTimer.current);
   }, [search]);
+
+  // Reset ref khi đổi tab để search vẫn hoạt động đúng
+  useEffect(() => {
+    if (!show) return;
+    isFirstMount.current = true; // reset khi tab thay đổi
+    exitSelectMode();
+    loadFirst(tab, search);
+  }, [tab, show]);
 
   // ── Infinite scroll ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -754,12 +761,12 @@ export default function Media({ show, onClose, onSelect }) {
       <div
         className="modal-backdrop show"
         onClick={onClose}
-        style={{ backdropFilter: "blur(2px)" }}
+        style={{ backdropFilter: "blur(2px)", zIndex: 1200 }}
       />
 
       <div
         className="modal show d-block"
-        style={{ zIndex: 1055 }}
+        style={{ zIndex: 1210 }}
         tabIndex="-1"
       >
         <div

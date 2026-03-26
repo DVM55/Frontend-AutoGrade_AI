@@ -3,6 +3,7 @@ import Media from "./Media";
 
 const Test = () => {
   const [open, setOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   return (
     <div className="p-3">
@@ -13,7 +14,10 @@ const Test = () => {
       <Media
         show={open}
         onClose={() => setOpen(false)}
-        onSelect={(file) => console.log(file)}
+        onSelect={(file) => {
+          setSelectedFile(file); // lưu vào state
+          console.log("Selected:", file);
+        }}
       />
     </div>
   );

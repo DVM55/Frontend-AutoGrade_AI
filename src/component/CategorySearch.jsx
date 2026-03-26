@@ -99,7 +99,7 @@ const CategorySearch = ({ value, onConfirm, onClose }) => {
         position: "fixed",
         inset: 0,
         background: "rgba(0,0,0,0.35)",
-        zIndex: 1100,
+        zIndex: 1200,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

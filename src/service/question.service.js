@@ -34,3 +34,12 @@ export const deleteAllQuestions = () => {
 export const updateQuestionsByIds = (data) => {
   return api.put("/questions/update-by-ids", data);
 };
+
+export const updateQuestion = (questionId, data) => {
+  return api.put(`/questions/${questionId}`, data);
+};
+
+// ───────────── CREATE MANY QUESTIONS ─────────────
+export const createQuestions = (data) => {
+  return api.post("/questions", data);
+};
