@@ -7,11 +7,11 @@ export default defineConfig({
   server: {
     host: true, // hoặc "0.0.0.0"
     port: 5173,
-    allowedHosts: ["earl-consequently-cat-muslim.trycloudflare.com"],
+    allowedHosts: ["identification-conflict-orleans-blend.trycloudflare.com"],
   },
   preview: {
     host: true,
     port: 4173,
-    allowedHosts: ["earl-consequently-cat-muslim.trycloudflare.com"],
+    allowedHosts: ["identification-conflict-orleans-blend.trycloudflare.com"],
   },
 });
