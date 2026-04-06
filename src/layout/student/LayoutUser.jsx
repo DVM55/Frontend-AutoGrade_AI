@@ -4,11 +4,11 @@ import Header from "./Header";
 
 const LayoutUser = () => {
   return (
-    <div className="d-flex flex-column min-vh-100">
-      <div style={{ position: "sticky", top: 0, zIndex: 1000 }}>
-        <Header />
-      </div>
-      <main className="flex-grow-1">
+    <div
+      style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}
+    >
+      <Header />
+      <main style={{ flex: 1 }}>
         <Outlet />
       </main>
     </div>

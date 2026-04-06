@@ -151,7 +151,7 @@ const GroupSearch = ({ value, onConfirm, onClose }) => {
                 padding: "7px 12px 7px 32px",
                 border: "1.5px solid #e9ecef",
                 borderRadius: "8px",
-                fontSize: "13.5px",
+                fontSize: "16px",
                 outline: "none",
                 boxSizing: "border-box",
               }}
@@ -181,7 +181,7 @@ const GroupSearch = ({ value, onConfirm, onClose }) => {
                 padding: "20px",
                 textAlign: "center",
                 color: "#adb5bd",
-                fontSize: "13px",
+                fontSize: "16px",
               }}
             >
               Không có dữ liệu
@@ -245,7 +245,14 @@ const GroupSearch = ({ value, onConfirm, onClose }) => {
                         transition: "border 0.15s",
                       }}
                     />
-                    <span style={{ fontSize: "13.5px", color: "#212529" }}>
+                    <span
+                      style={{
+                        fontSize: "16px",
+                        color: "#212529",
+                        wordBreak: "break-word",
+                        overflowWrap: "anywhere",
+                      }}
+                    >
                       {group.name}
                     </span>
                   </div>
@@ -278,7 +285,7 @@ const GroupSearch = ({ value, onConfirm, onClose }) => {
               border: "none",
               borderRadius: "8px",
               color: "#fff",
-              fontSize: "13.5px",
+              fontSize: "16px",
               fontWeight: 600,
               padding: "7px 20px",
               cursor: "pointer",

@@ -10,35 +10,41 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const fetchUser = async () => {
-    try {
-      const res = await getProfile();
-      return res.data;
-    } catch (err) {
-      return null;
-    }
-  };
-
   useEffect(() => {
+    let isMounted = true;
+
     const initAuth = async () => {
-      setLoading(true);
-      const userData = await fetchUser();
-      setUser(userData); // nếu null cũng ok
-      setLoading(false);
+      try {
+        const res = await getProfile();
+        if (isMounted) setUser(res.data);
+      } catch {
+        if (isMounted) setUser(null);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     };
+
     initAuth();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // chỉ chạy 1 lần khi mount
 
   const login = async (accessToken, refreshToken, callback) => {
     localStorage.setItem("access_token", accessToken);
     localStorage.setItem("refresh_token", refreshToken);
 
     setLoading(true);
-    const userData = await fetchUser();
-    setUser(userData);
-    setLoading(false);
-
-    if (userData && callback) callback(userData);
+    try {
+      const res = await getProfile();
+      setUser(res.data);
+      if (callback) callback(res.data);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async () => {
@@ -50,7 +56,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     setUser(null);
-    navigate("/login", { replace: true });
+    navigate("/trang-chu", { replace: true });
   };
 
   return (

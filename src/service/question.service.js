@@ -43,3 +43,14 @@ export const updateQuestion = (questionId, data) => {
 export const createQuestions = (data) => {
   return api.post("/questions", data);
 };
+
+export const importQuestions = (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return api.post("/questions/import-file", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};

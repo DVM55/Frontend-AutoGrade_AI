@@ -35,28 +35,43 @@ import ProfileAdmin from "./pages/admin/ProfileAdmin";
 import Password from "./pages/admin/Password";
 import Teacher from "./pages/admin/Teacher";
 
-import Test from "./pages/teacher/Test";
+import TrangChu from "./pages/TrangChu";
 import QuestionBank from "./pages/teacher/QuestionBank";
+import AuthLayout from "./layout/AuthLayout";
+import Feature from "./pages/Feature";
+import Contact from "./pages/Contact";
+import New from "./pages/New";
+import ProtectedRoute from "./context/ProtectedRoute";
 
 function App() {
   const { user, loading } = useAuth();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div></div>;
 
   return (
     <>
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer
+        position="top-center"
+        autoClose={2000}
+        theme="light"
+        pauseOnHover={false}
+        pauseOnFocusLoss={false}
+      />
 
       <Routes>
         {/* Public routes */}
-
-        <Route path="/media" element={<Test />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/verify-otp" element={<VerifyOTP />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/verify-account" element={<VerifyAccount />} />
+        <Route element={<AuthLayout />}>
+          <Route path="/trang-chu" element={<TrangChu />} />
+          <Route path="/feature" element={<Feature />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/new" element={<New />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-otp" element={<VerifyOTP />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-account" element={<VerifyAccount />} />
+        </Route>
 
         {/* Root redirect theo role */}
         <Route path="/" element={<RootRedirect />} />
@@ -86,7 +101,7 @@ function App() {
         )}
 
         {/* User routes */}
-        {user?.role === "USER" && (
+        <Route element={<ProtectedRoute role="USER" />}>
           <Route path="/user" element={<LayoutUser />}>
             <Route index element={<Navigate to="class" replace />} />
             <Route path="class" element={<ClassUser />} />
@@ -95,7 +110,7 @@ function App() {
             <Route path="profile" element={<ProfileUser />} />
             <Route path="change-password" element={<ChangePasswordUser />} />
           </Route>
-        )}
+        </Route>
       </Routes>
     </>
   );

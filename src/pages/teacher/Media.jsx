@@ -13,16 +13,8 @@ import { toast } from "react-toastify";
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 const TABS = [
   { key: "IMAGE", label: "Image", uploadLabel: "Upload" },
-  {
-    key: "VIDEO",
-    label: "Video (Mp4)",
-    uploadLabel: "Upload",
-  },
-  {
-    key: "AUDIO",
-    label: "Audio (mp3)",
-    uploadLabel: "Upload",
-  },
+  { key: "VIDEO", label: "Video", uploadLabel: "Upload" },
+  { key: "AUDIO", label: "Audio", uploadLabel: "Upload" },
 ];
 
 const PAGE_SIZE = 12;
@@ -68,19 +60,6 @@ const Icon = {
       <path d="M9 18V5l12-2v13" />
       <circle cx="6" cy="18" r="3" />
       <circle cx="18" cy="16" r="3" />
-    </svg>
-  ),
-  Search: () => (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#9ca3af"
-      strokeWidth="2"
-    >
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   ),
   Upload: () => (
@@ -157,8 +136,53 @@ const Icon = {
       <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
     </svg>
   ),
+  Close: () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#6b7280"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  ),
+  Search: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#9ca3af"
+      strokeWidth="2"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  ),
 };
 const TAB_ICONS = { IMAGE: Icon.Image, VIDEO: Icon.Video, AUDIO: Icon.Audio };
+
+// ── Spinner ───────────────────────────────────────────────────────────────────
+const Spinner = ({ size = 16, color = "#2563eb" }) => (
+  <>
+    <style>{`@keyframes media-spin { to { transform: rotate(360deg); } }`}</style>
+    <div
+      style={{
+        width: size,
+        height: size,
+        border: `2px solid rgba(0,0,0,0.08)`,
+        borderTopColor: color,
+        borderRadius: "50%",
+        animation: "media-spin 0.7s linear infinite",
+        flexShrink: 0,
+      }}
+    />
+  </>
+);
 
 // ── Thumbnail ─────────────────────────────────────────────────────────────────
 function Thumb({ item }) {
@@ -167,39 +191,64 @@ function Thumb({ item }) {
       <img
         src={item.fileUrl}
         alt={item.fileName}
-        className="w-100"
-        style={{ height: 130, objectFit: "cover", display: "block" }}
+        style={{
+          width: "100%",
+          height: 130,
+          objectFit: "cover",
+          display: "block",
+        }}
       />
     );
   if (item.mediaType === "VIDEO")
     return (
       <div
-        className="position-relative w-100"
-        style={{ height: 130, background: "#0f172a" }}
+        style={{
+          position: "relative",
+          width: "100%",
+          height: 130,
+          background: "#0f172a",
+        }}
       >
         <video
           src={item.fileUrl}
-          className="w-100 h-100"
-          style={{ objectFit: "cover", opacity: 0.7 }}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            opacity: 0.7,
+          }}
           muted
         />
-        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           <Icon.Play />
         </div>
       </div>
     );
   return (
     <div
-      className="d-flex flex-column align-items-center justify-content-center"
       style={{
         height: 130,
         background: "linear-gradient(135deg,#eff6ff,#dbeafe)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 4,
       }}
     >
       <Icon.Audio color="#93c5fd" />
-      <small className="mt-1" style={{ color: "#93c5fd", fontSize: 11 }}>
-        Audio file
-      </small>
+      <span style={{ color: "#93c5fd", fontSize: 16 }}>Audio file</span>
     </div>
   );
 }
@@ -210,59 +259,97 @@ function ConfirmModal({ message, loading, onConfirm, onCancel }) {
   return (
     <>
       <div
-        className="modal-backdrop show"
-        style={{ zIndex: 1065, opacity: 0.55 }}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          zIndex: 1220,
+        }}
       />
       <div
-        className="modal show d-block"
-        style={{ zIndex: 1070 }}
-        tabIndex="-1"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1225,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "0 16px",
+          boxSizing: "border-box",
+        }}
       >
         <div
-          className="modal-dialog modal-dialog-centered"
-          style={{ maxWidth: 400 }}
+          style={{
+            background: "#fff",
+            borderRadius: 14,
+            width: "100%",
+            maxWidth: 400,
+            boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+            boxSizing: "border-box",
+            padding: "28px 24px 24px",
+            textAlign: "center",
+          }}
         >
+          <div style={{ marginBottom: 12 }}>
+            <Icon.Warning />
+          </div>
           <div
-            className="modal-content"
-            style={{ borderRadius: 14, border: "none" }}
+            style={{
+              fontWeight: 700,
+              fontSize: 16,
+              color: "#0f172a",
+              marginBottom: 8,
+            }}
           >
-            <div className="modal-body text-center px-4 pt-4 pb-2">
-              <div className="mb-3">
-                <Icon.Warning />
-              </div>
-              <h6
-                className="fw-bold mb-2"
-                style={{ fontSize: 16, color: "#0f172a" }}
-              >
-                Bạn có chắc chắn xóa không?
-              </h6>
-              <p
-                className="text-secondary mb-0"
-                style={{ fontSize: 13.5 }}
-                dangerouslySetInnerHTML={{ __html: message }}
-              />
-            </div>
-            <div className="modal-footer border-0 justify-content-center gap-2 pb-4">
-              <button
-                className="btn btn-light px-4"
-                style={{ borderRadius: 8, fontSize: 13.5, minWidth: 100 }}
-                disabled={loading}
-                onClick={onCancel}
-              >
-                Hủy
-              </button>
-              <button
-                className="btn btn-danger px-4 d-flex align-items-center gap-2"
-                style={{ borderRadius: 8, fontSize: 13.5, minWidth: 100 }}
-                disabled={loading}
-                onClick={onConfirm}
-              >
-                {loading && (
-                  <span className="spinner-border spinner-border-sm" />
-                )}
-                Xóa
-              </button>
-            </div>
+            Bạn có chắc chắn xóa không?
+          </div>
+          <p
+            style={{
+              fontSize: 16,
+              color: "#64748b",
+              marginBottom: 20,
+              wordBreak: "break-word",
+            }}
+            dangerouslySetInnerHTML={{ __html: message }}
+          />
+          <div style={{ display: "flex", justifyContent: "center", gap: 10 }}>
+            <button
+              disabled={loading}
+              onClick={onCancel}
+              style={{
+                padding: "8px 24px",
+                borderRadius: 8,
+                border: "1.5px solid #e9ecef",
+                background: "#fff",
+                fontSize: 16,
+                cursor: "pointer",
+                minWidth: 90,
+              }}
+            >
+              Hủy
+            </button>
+            <button
+              disabled={loading}
+              onClick={onConfirm}
+              style={{
+                padding: "8px 24px",
+                borderRadius: 8,
+                border: "none",
+                background: "#ef4444",
+                color: "#fff",
+                fontSize: 16,
+                fontWeight: 600,
+                cursor: loading ? "not-allowed" : "pointer",
+                minWidth: 90,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              {loading && <Spinner size={13} color="#fff" />}
+              Xóa
+            </button>
           </div>
         </div>
       </div>
@@ -292,86 +379,155 @@ function RenameModal({ item, loading, onConfirm, onCancel }) {
   return (
     <>
       <div
-        className="modal-backdrop show"
-        style={{ zIndex: 1065, opacity: 0.55 }}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          zIndex: 1220,
+        }}
       />
       <div
-        className="modal show d-block"
-        style={{ zIndex: 1070 }}
-        tabIndex="-1"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1225,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "0 16px",
+          boxSizing: "border-box",
+        }}
       >
         <div
-          className="modal-dialog modal-dialog-centered"
-          style={{ maxWidth: 420 }}
+          style={{
+            background: "#fff",
+            borderRadius: 14,
+            width: "100%",
+            maxWidth: 420,
+            boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+            boxSizing: "border-box",
+          }}
         >
+          {/* Header */}
           <div
-            className="modal-content"
-            style={{ borderRadius: 14, border: "none" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              padding: "20px 20px 0",
+            }}
           >
-            <div className="modal-header border-0 pb-0 px-4 pt-4">
-              <h6
-                className="modal-title fw-bold"
-                style={{ fontSize: 16, color: "#0f172a" }}
+            <button
+              disabled={loading}
+              onClick={onCancel}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 2,
+                display: "flex",
+              }}
+            >
+              <Icon.Close />
+            </button>
+          </div>
+          {/* Body */}
+          <form onSubmit={handleSubmit}>
+            <div style={{ padding: "16px 20px" }}>
+              <label
+                style={{
+                  fontSize: 16,
+                  fontWeight: 700,
+                  display: "block",
+                  marginBottom: 6,
+                }}
               >
-                Đổi tên file
-              </h6>
+                Tên file
+              </label>
+              <input
+                ref={inputRef}
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  border: "1.5px solid #e9ecef",
+                  fontSize: 16,
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#2563eb";
+                  e.target.style.boxShadow = "0 0 0 3px rgba(37,99,235,.15)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e9ecef";
+                  e.target.style.boxShadow = "none";
+                }}
+              />
+              {ext && (
+                <span
+                  style={{
+                    fontSize: 16,
+                    color: "#9ca3af",
+                    marginTop: 4,
+                    display: "block",
+                  }}
+                >
+                  Đuôi file: <code>{ext}</code> — sẽ được giữ nguyên nếu bạn
+                  xóa.
+                </span>
+              )}
+            </div>
+            {/* Footer */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 8,
+                padding: "0 20px 20px",
+              }}
+            >
               <button
-                className="btn-close"
+                type="button"
                 disabled={loading}
                 onClick={onCancel}
-              />
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: 8,
+                  border: "1.5px solid #e9ecef",
+                  background: "#fff",
+                  fontSize: 16,
+                  cursor: "pointer",
+                }}
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: "#2563eb",
+                  color: "#fff",
+                  fontSize: 16,
+                  fontWeight: 600,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                {loading && <Spinner size={13} color="#fff" />}
+                Lưu
+              </button>
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body px-4 py-3">
-                <label
-                  className="form-label text-secondary"
-                  style={{ fontSize: 13 }}
-                >
-                  Tên file
-                </label>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  className="form-control"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  style={{ borderRadius: 8, fontSize: 14 }}
-                  required
-                />
-                {ext && (
-                  <small
-                    className="text-secondary mt-1 d-block"
-                    style={{ fontSize: 12 }}
-                  >
-                    Đuôi file: <code>{ext}</code> — sẽ được giữ nguyên nếu bạn
-                    xóa.
-                  </small>
-                )}
-              </div>
-              <div className="modal-footer border-0 px-4 pb-4 gap-2">
-                <button
-                  type="button"
-                  className="btn btn-light px-4"
-                  style={{ borderRadius: 8, fontSize: 13.5 }}
-                  disabled={loading}
-                  onClick={onCancel}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary px-4 d-flex align-items-center gap-2"
-                  style={{ borderRadius: 8, fontSize: 13.5 }}
-                  disabled={loading}
-                >
-                  {loading && (
-                    <span className="spinner-border spinner-border-sm" />
-                  )}
-                  Lưu
-                </button>
-              </div>
-            </form>
-          </div>
+          </form>
         </div>
       </div>
     </>
@@ -391,113 +547,133 @@ function MediaCard({
   const [hovered, setHovered] = useState(false);
   const handleClick = () => (selectMode ? onCheck() : onSelect());
   return (
-    <div className="col-6 col-md-3 mb-3">
-      <div
-        onClick={handleClick}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        className="position-relative"
-        style={{
-          border: `2px solid ${isChecked ? "#2563eb" : "#e5e7eb"}`,
-          borderRadius: 10,
-          overflow: "hidden",
-          cursor: "pointer",
-          background: isChecked ? "#eff6ff" : "#fff",
-          userSelect: "none",
-          transition: "border-color .15s, box-shadow .15s, background .15s",
-          boxShadow: isChecked
-            ? "0 0 0 3px rgba(37,99,235,.15)"
-            : hovered
-              ? "0 4px 14px rgba(0,0,0,.12)"
-              : "0 1px 3px rgba(0,0,0,.06)",
-        }}
-      >
-        {(hovered || isChecked) && (
-          <div
-            className="position-absolute top-0 start-0 w-100 d-flex justify-content-between align-items-start p-2"
-            style={{
-              height: 130,
-              zIndex: 3,
-              background: hovered ? "rgba(0,0,0,.18)" : "rgba(0,0,0,.05)",
-              pointerEvents: "none",
-            }}
-          >
-            {selectMode && (
-              <input
-                type="checkbox"
-                className="form-check-input"
-                checked={isChecked}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  onCheck();
-                }}
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  width: 18,
-                  height: 18,
-                  cursor: "pointer",
-                  borderRadius: 5,
-                  pointerEvents: "auto",
-                  flexShrink: 0,
-                }}
-              />
-            )}
-            {!selectMode && hovered && (
-              <div
-                className="d-flex gap-1 ms-auto"
-                style={{ pointerEvents: "auto" }}
-              >
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditClick(item);
-                  }}
-                  className="btn d-flex align-items-center justify-content-center p-0"
-                  title="Đổi tên"
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 7,
-                    background: "#2563eb",
-                    border: "none",
-                  }}
-                >
-                  <Icon.Edit size={13} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteClick(item);
-                  }}
-                  className="btn d-flex align-items-center justify-content-center p-0"
-                  title="Xóa"
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 7,
-                    background: "#ef4444",
-                    border: "none",
-                  }}
-                >
-                  <Icon.Trash size={13} />
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-        <Thumb item={item} />
+    <div
+      onClick={handleClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position: "relative",
+        borderRadius: 10,
+        overflow: "hidden",
+        cursor: "pointer",
+        userSelect: "none",
+        border: `2px solid ${isChecked ? "#2563eb" : hovered ? "#93c5fd" : "#e5e7eb"}`,
+        background: isChecked ? "#eff6ff" : "#fff",
+        transition:
+          "border-color .15s, box-shadow .15s, background .15s, transform .15s",
+        boxShadow: isChecked
+          ? "0 0 0 3px rgba(37,99,235,.15)"
+          : hovered
+            ? "0 6px 18px rgba(0,0,0,.13)"
+            : "0 1px 3px rgba(0,0,0,.06)",
+        transform: hovered && !isChecked ? "translateY(-2px)" : "none",
+      }}
+    >
+      {(hovered || isChecked) && (
         <div
-          className="px-2 py-1"
           style={{
-            fontSize: 13,
-            color: "#374151",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: 130,
+            zIndex: 3,
+            pointerEvents: "none",
+            background: hovered ? "rgba(0,0,0,.18)" : "rgba(0,0,0,.05)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            padding: 8,
+            boxSizing: "border-box",
           }}
         >
-          {item.fileName}
+          {selectMode && (
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onChange={(e) => {
+                e.stopPropagation();
+                onCheck();
+              }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: 18,
+                height: 18,
+                cursor: "pointer",
+                borderRadius: 5,
+                pointerEvents: "auto",
+                flexShrink: 0,
+                accentColor: "#2563eb",
+              }}
+            />
+          )}
+          {!selectMode && hovered && (
+            <div
+              style={{
+                display: "flex",
+                gap: 4,
+                marginLeft: "auto",
+                pointerEvents: "auto",
+              }}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditClick(item);
+                }}
+                title="Đổi tên"
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 7,
+                  background: "#2563eb",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon.Edit size={13} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteClick(item);
+                }}
+                title="Xóa"
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 7,
+                  background: "#ef4444",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon.Trash size={13} />
+              </button>
+            </div>
+          )}
         </div>
+      )}
+      <Thumb item={item} />
+      <div
+        style={{
+          padding: "5px 8px 6px",
+          fontSize: 16,
+          color: "#374151",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          fontWeight: 500,
+          borderTop: "1px solid #f3f4f6",
+        }}
+      >
+        {item.fileName}
       </div>
     </div>
   );
@@ -509,7 +685,7 @@ export default function Media({ show, onClose, onSelect }) {
   const [data, setData] = useState([]);
   const [meta, setMeta] = useState(null);
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -518,19 +694,28 @@ export default function Media({ show, onClose, onSelect }) {
   const [selectMode, setSelectMode] = useState(false);
   const [checked, setChecked] = useState([]);
 
-  // ── confirm & rename state ────────────────────────────────────────────────
   const [confirmMsg, setConfirmMsg] = useState(null);
   const [confirmCb, setConfirmCb] = useState(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [renameItem, setRenameItem] = useState(null);
   const [renameLoading, setRenameLoading] = useState(false);
 
+  const [isNarrow, setIsNarrow] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 480 : false,
+  );
+
+  useEffect(() => {
+    const handleResize = () => setIsNarrow(window.innerWidth < 480);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const fileRef = useRef();
   const searchTimer = useRef();
   const scrollRef = useRef();
   const sentinelRef = useRef();
 
-  // ── Load trang đầu (reset) — GIỮ NGUYÊN ──────────────────────────────────
+  // ── Load trang đầu ────────────────────────────────────────────────────────
   const loadFirst = useCallback(async (mediaType, fileName) => {
     setLoading(true);
     setError(null);
@@ -549,14 +734,15 @@ export default function Media({ show, onClose, onSelect }) {
       setData(items || []);
       setMeta(m);
       setHasMore(m.currentPage < m.totalPages);
-    } catch (e) {
+    } catch {
       setError("Không thể tải media. Vui lòng thử lại.");
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // ── Load trang tiếp (append) — GIỮ NGUYÊN ────────────────────────────────
+  // ── Load trang tiếp ───────────────────────────────────────────────────────
   const loadMore = useCallback(
     async (mediaType, fileName, nextPage) => {
       if (loadingMore) return;
@@ -573,8 +759,8 @@ export default function Media({ show, onClose, onSelect }) {
         setMeta(m);
         setPage(nextPage);
         setHasMore(m.currentPage < m.totalPages);
-      } catch (e) {
-        // silent fail
+      } catch {
+        setHasMore(false);
       } finally {
         setLoadingMore(false);
       }
@@ -584,35 +770,31 @@ export default function Media({ show, onClose, onSelect }) {
 
   const isFirstMount = useRef(true);
 
-  // Effect search — chỉ chạy khi user thực sự gõ
   useEffect(() => {
     if (!show) return;
     if (isFirstMount.current) {
       isFirstMount.current = false;
-      return; // ← bỏ qua lần mount đầu
+      return;
     }
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => loadFirst(tab, search), 400);
     return () => clearTimeout(searchTimer.current);
   }, [search]);
 
-  // Reset ref khi đổi tab để search vẫn hoạt động đúng
   useEffect(() => {
     if (!show) return;
-    isFirstMount.current = true; // reset khi tab thay đổi
+    isFirstMount.current = true;
     exitSelectMode();
     loadFirst(tab, search);
   }, [tab, show]);
 
-  // ── Infinite scroll ───────────────────────────────────────────────────────
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore)
           loadMore(tab, search, page + 1);
-        }
       },
       { root: scrollRef.current, threshold: 0.1 },
     );
@@ -620,25 +802,21 @@ export default function Media({ show, onClose, onSelect }) {
     return () => observer.disconnect();
   }, [hasMore, loading, loadingMore, tab, search, page, loadMore]);
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
   const exitSelectMode = () => {
     setSelectMode(false);
     setChecked([]);
   };
-
   const toggleCheck = (item) =>
     setChecked((prev) =>
       prev.includes(item.id)
         ? prev.filter((id) => id !== item.id)
         : [...prev, item.id],
     );
-
   const handleSelect = (item) => {
     onSelect(item);
     onClose();
   };
 
-  // ── Confirm helper ────────────────────────────────────────────────────────
   const openConfirm = (msg, cb) => {
     setConfirmMsg(msg);
     setConfirmCb(() => cb);
@@ -654,23 +832,19 @@ export default function Media({ show, onClose, onSelect }) {
     try {
       await confirmCb();
       closeConfirm();
-      loadFirst(tab, search); // reload từ trang đầu
+      loadFirst(tab, search);
     } catch {
-      /* toast lỗi nếu cần */
     } finally {
       setConfirmLoading(false);
     }
   };
 
-  // ── Xóa 1 ────────────────────────────────────────────────────────────────
   const handleDeleteSingle = (item) => {
     openConfirm(
       `File <strong>"${item.fileName}"</strong> sẽ bị xóa vĩnh viễn và không thể khôi phục.`,
       () => deleteMedia(item.id),
     );
   };
-
-  // ── Xóa nhiều ────────────────────────────────────────────────────────────
   const handleDeleteSelected = () => {
     openConfirm(
       `<strong>${checked.length} ${tab.toLowerCase()}</strong> đã chọn sẽ bị xóa vĩnh viễn và không thể khôi phục.`,
@@ -680,27 +854,22 @@ export default function Media({ show, onClose, onSelect }) {
       },
     );
   };
-
-  // ── Xóa tất cả ───────────────────────────────────────────────────────────
   const handleDeleteAll = () => {
     openConfirm(
-      `<strong>Tất cả ${meta?.totalItems ?? data.length} ${tab.toLowerCase()} </strong> sẽ bị xóa vĩnh viễn và không thể khôi phục.`,
+      `<strong>Tất cả ${meta?.totalItems ?? data.length} ${tab.toLowerCase()}</strong> sẽ bị xóa vĩnh viễn và không thể khôi phục.`,
       async () => {
-        await deleteAllMedia(tab); // ✅ truyền body
+        await deleteAllMedia(tab);
         exitSelectMode();
       },
     );
   };
-
-  // ── Đổi tên ──────────────────────────────────────────────────────────────
   const handleRename = async (id, newName) => {
     setRenameLoading(true);
     try {
       await updateMedia(id, { fileName: newName });
       setRenameItem(null);
-      loadFirst(tab, search); // reload từ trang đầu
+      loadFirst(tab, search);
     } catch {
-      /* toast lỗi nếu cần */
     } finally {
       setRenameLoading(false);
     }
@@ -709,28 +878,22 @@ export default function Media({ show, onClose, onSelect }) {
   const handleUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
-
     try {
       const uploadResults = await getPresignedUploadUrls(files);
-
       await Promise.all(
         uploadResults.map((item, index) => {
           const file = files[index];
-
           return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open("PUT", item.uploadUrl);
             xhr.setRequestHeader("Content-Type", item.contentType);
-
             xhr.onload = () =>
               xhr.status === 200 || xhr.status === 204 ? resolve() : reject();
-
             xhr.onerror = reject;
             xhr.send(file);
           });
         }),
       );
-
       await createMedia(
         uploadResults.map((item) => ({
           objectKey: item.objectKey,
@@ -738,16 +901,12 @@ export default function Media({ show, onClose, onSelect }) {
           contentType: item.contentType,
         })),
       );
-
       toast.success("Upload thành công");
       loadFirst(tab, search);
     } catch (err) {
-      const message =
-        err?.response?.data?.message || // axios backend trả về
-        err?.message || // lỗi JS
-        "Upload thất bại";
-
-      toast.error(message);
+      toast.error(
+        err?.response?.data?.message || err?.message || "Upload thất bại",
+      );
     } finally {
       e.target.value = "";
     }
@@ -758,280 +917,442 @@ export default function Media({ show, onClose, onSelect }) {
 
   return (
     <>
+      {/* Backdrop */}
       <div
-        className="modal-backdrop show"
         onClick={onClose}
-        style={{ backdropFilter: "blur(2px)", zIndex: 1200 }}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.45)",
+          backdropFilter: "blur(2px)",
+          zIndex: 1200,
+        }}
       />
 
+      {/* Modal wrapper */}
       <div
-        className="modal show d-block"
-        style={{ zIndex: 1210 }}
-        tabIndex="-1"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1210,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 16,
+          boxSizing: "border-box",
+        }}
       >
         <div
-          className="modal-dialog modal-xl modal-dialog-centered"
-          style={{ maxWidth: 900 }}
+          style={{
+            background: "#fff",
+            borderRadius: 14,
+            width: "100%",
+            maxWidth: 900,
+            height: 610,
+            display: "flex",
+            flexDirection: "column",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+            overflow: "hidden",
+          }}
         >
+          {/* Header */}
           <div
-            className="modal-content"
             style={{
-              borderRadius: 14,
-              border: "none",
-              overflow: "hidden",
-              height: 610,
               display: "flex",
-              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "20px 24px 0",
+              flexShrink: 0,
             }}
           >
-            {/* Header */}
-            <div className="modal-header border-0 pb-0 px-4">
-              <h5
-                className="modal-title fw-bold"
-                style={{ fontSize: 18, color: "#0f172a" }}
+            <span style={{ fontWeight: 700, fontSize: 16, color: "#0f172a" }}>
+              Media
+            </span>
+            <button
+              onClick={onClose}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 4,
+                display: "flex",
+              }}
+            >
+              <Icon.Close />
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div
+            style={{
+              display: "flex",
+              padding: "12px 24px 0",
+              borderBottom: "1px solid #f1f5f9",
+              flexShrink: 0,
+            }}
+          >
+            {TABS.map(({ key, label }) => {
+              const active = tab === key;
+              const TabIcon = TAB_ICONS[key];
+              return (
+                <button
+                  key={key}
+                  onClick={() => {
+                    setTab(key);
+                    setSearch("");
+                    exitSelectMode();
+                  }}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    padding: "10px 0",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: active ? 600 : 400,
+                    color: active ? "#2563eb" : "#6b7280",
+                    borderBottom: active
+                      ? "2.5px solid #2563eb"
+                      : "2.5px solid transparent",
+                    marginBottom: -1,
+                    fontSize: 16.5,
+                    transition: "color 0.15s",
+                  }}
+                >
+                  <TabIcon color={active ? "#2563eb" : "#6b7280"} />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Toolbar */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: isNarrow ? "column" : "row",
+              alignItems: isNarrow ? "stretch" : "center",
+              gap: 8,
+              padding: "12px 24px",
+              flexShrink: 0,
+            }}
+          >
+            {/* Search */}
+            <div
+              style={{
+                position: "relative",
+                maxWidth: isNarrow ? "100%" : 260,
+                width: "100%",
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute",
+                  left: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  pointerEvents: "none",
+                  display: "flex",
+                }}
               >
-                Media
-              </h5>
-              <button className="btn-close" onClick={onClose} />
+                <Icon.Search />
+              </span>
+              <input
+                type="text"
+                placeholder="Search file"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px 8px 32px",
+                  borderRadius: 8,
+                  border: "1.5px solid #e9ecef",
+                  fontSize: 16,
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#2563eb";
+                  e.target.style.boxShadow = "0 0 0 3px rgba(37,99,235,.15)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e9ecef";
+                  e.target.style.boxShadow = "none";
+                }}
+              />
             </div>
 
-            {/* Tabs */}
+            {/* Actions */}
             <div
-              className="px-4 mt-3"
-              style={{ borderBottom: "1px solid #f1f5f9", flexShrink: 0 }}
+              style={{
+                display: "flex",
+                gap: 8,
+                flexShrink: 0,
+                marginLeft: isNarrow ? 0 : "auto",
+                justifyContent: isNarrow ? "flex-end" : "flex-start",
+              }}
             >
-              <ul className="nav w-100">
-                {TABS.map(({ key, label }) => {
-                  const active = tab === key;
-                  const TabIcon = TAB_ICONS[key];
-                  return (
-                    <li className="nav-item" key={key} style={{ flex: 1 }}>
-                      <button
-                        onClick={() => {
-                          setTab(key);
-                          setSearch("");
-                          exitSelectMode();
-                        }}
-                        className="btn btn-link text-decoration-none d-flex align-items-center justify-content-center gap-2 py-3 w-100"
-                        style={{
-                          fontWeight: active ? 600 : 400,
-                          color: active ? "#2563eb" : "#6b7280",
-                          borderBottom: active
-                            ? "2.5px solid #2563eb"
-                            : "2.5px solid transparent",
-                          borderRadius: 0,
-                          marginBottom: -1,
-                          fontSize: 14.5,
-                        }}
-                      >
-                        <TabIcon color={active ? "#2563eb" : "#6b7280"} />
-                        {label}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-
-            {/* Toolbar */}
-            <div
-              className="d-flex align-items-center gap-2 px-4 py-4"
-              style={{ flexShrink: 0 }}
-            >
-              <div className="input-group" style={{ maxWidth: 260 }}>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search file"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+              {!selectMode ? (
+                <button
+                  disabled={data.length === 0}
+                  onClick={() => setSelectMode(true)}
                   style={{
-                    borderRadius: "8px",
-                    fontSize: 13.5,
-                    transition: "0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.borderColor = "#2563eb";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (document.activeElement !== e.target)
-                      e.target.style.borderColor = "";
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "#2563eb";
-                    e.target.style.boxShadow = "0 0 0 3px rgba(37,99,235,.15)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "";
-                    e.target.style.boxShadow = "";
-                  }}
-                />
-              </div>
-
-              <div className="d-flex gap-2 ms-auto">
-                {!selectMode ? (
-                  <button
-                    className="btn btn-outline-secondary d-flex align-items-center gap-2"
-                    style={{ borderRadius: 8, fontSize: 13.5 }}
-                    disabled={data.length === 0}
-                    onClick={() => setSelectMode(true)}
-                  >
-                    <Icon.Select /> Chọn
-                  </button>
-                ) : (
-                  <button
-                    className="btn btn-outline-secondary"
-                    style={{ borderRadius: 8, fontSize: 13.5 }}
-                    onClick={exitSelectMode}
-                  >
-                    Hủy
-                  </button>
-                )}
-                <label
-                  className="btn d-flex align-items-center gap-2"
-                  style={{
-                    border: "1.5px solid #2563eb",
-                    color: "#2563eb",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "7px 14px",
                     borderRadius: 8,
-                    fontSize: 13.5,
-                    fontWeight: 500,
+                    border: "1.5px solid #d1d5db",
+                    background: "#fff",
+                    color: "#374151",
+                    fontSize: 16,
+                    cursor: data.length === 0 ? "not-allowed" : "pointer",
+                    opacity: data.length === 0 ? 0.5 : 1,
                   }}
                 >
-                  <Icon.Upload />
-                  {currentTab.uploadLabel}
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    hidden
-                    onChange={handleUpload}
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Select mode action bar */}
-            {selectMode && (
-              <div
-                className="d-flex align-items-center gap-3 px-4 pb-2"
-                style={{ flexShrink: 0, borderBottom: "1px solid #f8fafc" }}
-              >
-                <div className="d-flex gap-2 ms-auto">
-                  <button
-                    className="btn btn-danger d-flex align-items-center gap-2"
-                    style={{ borderRadius: 8, fontSize: 13.5 }}
-                    disabled={checked.length === 0}
-                    onClick={handleDeleteSelected}
-                  >
-                    <Icon.Trash size={13} color="#fff" /> Xóa ({checked.length})
-                  </button>
-                  <button
-                    className="btn d-flex align-items-center gap-2"
-                    style={{
-                      borderRadius: 8,
-                      fontSize: 13.5,
-                      border: "1.5px solid #ef4444",
-                      color: "#ef4444",
-                      background: "#fff",
-                    }}
-                    disabled={data.length === 0}
-                    onClick={handleDeleteAll}
-                  >
-                    <Icon.Trash size={13} color="#ef4444" /> Xóa tất cả
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Grid */}
-            <div
-              ref={scrollRef}
-              style={{ flex: 1, overflowY: "auto", padding: "0 24px 0" }}
-            >
-              {loading ? (
-                <div
-                  className="d-flex align-items-center justify-content-center"
-                  style={{ height: 200 }}
-                >
-                  <div className="spinner-border spinner-border-sm text-primary me-2" />
-                  <span className="text-secondary" style={{ fontSize: 14 }}>
-                    Loading...
-                  </span>
-                </div>
-              ) : error ? (
-                <div
-                  className="d-flex flex-column align-items-center justify-content-center"
-                  style={{ height: 200, gap: 12 }}
-                >
-                  <span className="text-danger" style={{ fontSize: 14 }}>
-                    {error}
-                  </span>
-                  <button
-                    className="btn btn-sm btn-outline-primary"
-                    style={{ borderRadius: 8 }}
-                    onClick={() => loadFirst(tab, search)}
-                  >
-                    Thử lại
-                  </button>
-                </div>
-              ) : data.length === 0 ? (
-                <div
-                  className="d-flex align-items-center justify-content-center text-secondary"
-                  style={{ height: 200, fontSize: 14 }}
-                >
-                  Không có file nào
-                </div>
+                  <Icon.Select /> Chọn
+                </button>
               ) : (
-                <>
-                  <div className="row">
-                    {data.map((item) => (
-                      <MediaCard
-                        key={item.id}
-                        item={item}
-                        isChecked={checked.includes(item.id)}
-                        selectMode={selectMode}
-                        onSelect={() => handleSelect(item)}
-                        onCheck={() => toggleCheck(item)}
-                        onDeleteClick={handleDeleteSingle}
-                        onEditClick={setRenameItem}
-                      />
-                    ))}
-                  </div>
-                  <div ref={sentinelRef} style={{ height: 1 }} />
-                  {loadingMore && (
-                    <div className="d-flex justify-content-center py-3">
-                      <div className="spinner-border spinner-border-sm text-primary" />
-                    </div>
-                  )}
-                </>
+                <button
+                  onClick={exitSelectMode}
+                  style={{
+                    padding: "7px 14px",
+                    borderRadius: 8,
+                    border: "1.5px solid #d1d5db",
+                    background: "#fff",
+                    color: "#374151",
+                    fontSize: 16,
+                    cursor: "pointer",
+                  }}
+                >
+                  Hủy
+                </button>
               )}
-            </div>
-
-            {/* Footer */}
-            <div
-              className="px-4 py-2 d-flex align-items-center justify-content-between"
-              style={{ borderTop: "1px solid #f1f5f9", flexShrink: 0 }}
-            >
-              <small className="text-secondary">
-                {meta ? (
-                  <>
-                    {checked.length > 0 && (
-                      <span className="ms-2 text-primary fw-semibold">
-                        · {checked.length} đã chọn
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  ""
-                )}
-              </small>
-              <button
-                className="btn btn-light ms-auto"
-                style={{ borderRadius: 8, fontSize: 13.5 }}
-                onClick={onClose}
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  padding: isNarrow ? "7px 10px" : "7px 14px",
+                  border: "1.5px solid #2563eb",
+                  color: "#2563eb",
+                  borderRadius: 8,
+                  fontSize: 16,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  whiteSpace: "nowrap",
+                }}
               >
-                Đóng
+                <Icon.Upload />
+                {!isNarrow && currentTab.uploadLabel}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  hidden
+                  onChange={handleUpload}
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Select mode action bar */}
+          {selectMode && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 8,
+                padding: "0 24px 10px",
+                flexShrink: 0,
+                borderBottom: "1px solid #f1f5f9",
+              }}
+            >
+              <button
+                disabled={checked.length === 0}
+                onClick={handleDeleteSelected}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 14px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: checked.length === 0 ? "#f1f3f5" : "#ef4444",
+                  color: checked.length === 0 ? "#adb5bd" : "#fff",
+                  fontSize: 16,
+                  fontWeight: 500,
+                  cursor: checked.length === 0 ? "not-allowed" : "pointer",
+                }}
+              >
+                <Icon.Trash
+                  size={13}
+                  color={checked.length === 0 ? "#adb5bd" : "#fff"}
+                />
+                Xóa ({checked.length})
+              </button>
+              <button
+                disabled={data.length === 0}
+                onClick={handleDeleteAll}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 14px",
+                  borderRadius: 8,
+                  border: "1.5px solid #ef4444",
+                  background: "#fff",
+                  color: "#ef4444",
+                  fontSize: 16,
+                  fontWeight: 500,
+                  cursor: data.length === 0 ? "not-allowed" : "pointer",
+                  opacity: data.length === 0 ? 0.5 : 1,
+                }}
+              >
+                <Icon.Trash size={13} color="#ef4444" />
+                Xóa tất cả
               </button>
             </div>
+          )}
+
+          {/* Grid */}
+          <div
+            ref={scrollRef}
+            style={{ flex: 1, overflowY: "auto", padding: "0 24px" }}
+          >
+            {loading ? (
+              <div
+                style={{
+                  height: 200,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                }}
+              >
+                <Spinner size={18} />
+                <span style={{ fontSize: 16, color: "#6b7280" }}>
+                  Loading...
+                </span>
+              </div>
+            ) : error ? (
+              <div
+                style={{
+                  height: 200,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 12,
+                }}
+              >
+                <span style={{ fontSize: 16, color: "#ef4444" }}>{error}</span>
+                <button
+                  onClick={() => loadFirst(tab, search)}
+                  style={{
+                    padding: "6px 16px",
+                    borderRadius: 8,
+                    border: "1.5px solid #2563eb",
+                    background: "#fff",
+                    color: "#2563eb",
+                    fontSize: 16,
+                    cursor: "pointer",
+                  }}
+                >
+                  Thử lại
+                </button>
+              </div>
+            ) : data.length === 0 ? (
+              <div
+                style={{
+                  height: 200,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 16,
+                  color: "#9ca3af",
+                }}
+              >
+                Không có file nào
+              </div>
+            ) : (
+              <>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(150px, 1fr))",
+                    gap: 12,
+                    paddingTop: 12,
+                    paddingBottom: 12,
+                  }}
+                >
+                  {data.map((item) => (
+                    <MediaCard
+                      key={item.id}
+                      item={item}
+                      isChecked={checked.includes(item.id)}
+                      selectMode={selectMode}
+                      onSelect={() => handleSelect(item)}
+                      onCheck={() => toggleCheck(item)}
+                      onDeleteClick={handleDeleteSingle}
+                      onEditClick={setRenameItem}
+                    />
+                  ))}
+                </div>
+                <div ref={sentinelRef} style={{ height: 1 }} />
+                {loadingMore && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      padding: "16px 0",
+                    }}
+                  >
+                    <Spinner size={20} />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "10px 24px",
+              borderTop: "1px solid #f1f5f9",
+              flexShrink: 0,
+            }}
+          >
+            <span style={{ fontSize: 16, color: "#6b7280" }}>
+              {meta && checked.length > 0 && (
+                <span style={{ color: "#2563eb", fontWeight: 600 }}>
+                  · {checked.length} đã chọn
+                </span>
+              )}
+            </span>
+            <button
+              onClick={onClose}
+              style={{
+                padding: "7px 18px",
+                borderRadius: 8,
+                border: "1.5px solid #e9ecef",
+                background: "#fff",
+                fontSize: 16,
+                cursor: "pointer",
+                color: "#374151",
+              }}
+            >
+              Đóng
+            </button>
           </div>
         </div>
       </div>

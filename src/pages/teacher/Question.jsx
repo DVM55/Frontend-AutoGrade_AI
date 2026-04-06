@@ -52,23 +52,22 @@ const QUESTION_TYPE_COLOR = {
 };
 
 const ALPHA = ["A", "B", "C", "D", "E", "F"];
-
 const PAGE_SIZE = 10;
 
 // ===== Media Badge =====
 const MediaBadge = ({ mediaType, mediaUrl }) => {
   if (!mediaType || !mediaUrl) return null;
-
   if (mediaType === "IMAGE") {
     return (
       <div
         style={{
           borderRadius: "8px",
           overflow: "hidden",
-          maxHeight: "200px",
+          width: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          background: "#f8f9fa",
         }}
       >
         <img
@@ -76,7 +75,7 @@ const MediaBadge = ({ mediaType, mediaUrl }) => {
           alt="Question media"
           style={{
             width: "100%",
-            maxHeight: "200px",
+            maxHeight: "240px",
             objectFit: "contain",
             display: "block",
           }}
@@ -87,7 +86,6 @@ const MediaBadge = ({ mediaType, mediaUrl }) => {
       </div>
     );
   }
-
   if (mediaType === "VIDEO") {
     return (
       <div
@@ -113,13 +111,12 @@ const MediaBadge = ({ mediaType, mediaUrl }) => {
         >
           <polygon points="5 3 19 12 5 21 5 3" fill="#e67700" stroke="none" />
         </svg>
-        <span style={{ fontSize: "12px", fontWeight: 600, color: "#e67700" }}>
+        <span style={{ fontSize: "16px", fontWeight: 600, color: "#e67700" }}>
           Video
         </span>
       </div>
     );
   }
-
   if (mediaType === "AUDIO") {
     return (
       <div
@@ -148,13 +145,12 @@ const MediaBadge = ({ mediaType, mediaUrl }) => {
           <circle cx="6" cy="18" r="3" />
           <circle cx="18" cy="16" r="3" />
         </svg>
-        <span style={{ fontSize: "12px", fontWeight: 600, color: "#1971c2" }}>
+        <span style={{ fontSize: "16px", fontWeight: 600, color: "#1971c2" }}>
           Audio
         </span>
       </div>
     );
   }
-
   return null;
 };
 
@@ -179,17 +175,20 @@ const ConfirmModal = ({ message, loading, onConfirm, onCancel }) => {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          padding: "0 12px",
+          boxSizing: "border-box",
         }}
       >
         <div
           style={{
             background: "#fff",
             borderRadius: "14px",
-            padding: "28px 28px 24px",
+            padding: "28px 16px 24px",
             width: "100%",
             maxWidth: "380px",
             boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
             textAlign: "center",
+            boxSizing: "border-box",
           }}
         >
           <div style={{ marginBottom: "14px" }}>
@@ -209,7 +208,7 @@ const ConfirmModal = ({ message, loading, onConfirm, onCancel }) => {
           <div
             style={{
               fontWeight: 700,
-              fontSize: "15px",
+              fontSize: "16px",
               color: "#0f172a",
               marginBottom: "8px",
             }}
@@ -218,9 +217,10 @@ const ConfirmModal = ({ message, loading, onConfirm, onCancel }) => {
           </div>
           <p
             style={{
-              fontSize: "13.5px",
+              fontSize: "16px",
               color: "#64748b",
               marginBottom: "20px",
+              wordBreak: "break-word",
             }}
             dangerouslySetInnerHTML={{ __html: message }}
           />
@@ -231,13 +231,13 @@ const ConfirmModal = ({ message, loading, onConfirm, onCancel }) => {
               disabled={loading}
               onClick={onCancel}
               style={{
-                padding: "8px 24px",
+                padding: "8px 20px",
                 borderRadius: "8px",
                 border: "1.5px solid #e9ecef",
                 background: "#fff",
-                fontSize: "13.5px",
+                fontSize: "16px",
                 cursor: "pointer",
-                minWidth: "90px",
+                minWidth: "80px",
               }}
             >
               Hủy
@@ -246,15 +246,15 @@ const ConfirmModal = ({ message, loading, onConfirm, onCancel }) => {
               disabled={loading}
               onClick={onConfirm}
               style={{
-                padding: "8px 24px",
+                padding: "8px 20px",
                 borderRadius: "8px",
                 border: "none",
                 background: "#ef4444",
                 color: "#fff",
-                fontSize: "13.5px",
+                fontSize: "16px",
                 fontWeight: 600,
                 cursor: "pointer",
-                minWidth: "90px",
+                minWidth: "80px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -282,56 +282,533 @@ const ConfirmModal = ({ message, loading, onConfirm, onCancel }) => {
   );
 };
 
+// ===== Question Card (defined OUTSIDE Question to avoid stale closure) =====
+const QuestionCard = ({
+  question,
+  selectMode,
+  isChecked,
+  isWide,
+  onToggleCheck,
+  onEditSingle,
+  onDeleteSingle,
+}) => {
+  const typeColor = QUESTION_TYPE_COLOR[question.questionType] ?? {
+    bg: "#f1f3f5",
+    text: "#495057",
+  };
+  const typeLabel =
+    QUESTION_TYPE_LABEL[question.questionType] ?? question.questionType;
+  const isMultiple = question.questionType === "MULTIPLE_CHOICE";
+  const isShort = question.questionType === "SHORT_ANSWER";
+  const hasImage = question.mediaType === "IMAGE" && !!question.mediaUrl;
+  const hasNonImageMedia = !!(
+    question.mediaUrl &&
+    question.mediaType &&
+    question.mediaType !== "IMAGE"
+  );
+
+  const IconTrash = ({ size = 13, color = "#fff" }) => (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2.2"
+    >
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+      <path d="M10 11v6M14 11v6M9 6V4h6v2" />
+    </svg>
+  );
+  const IconEdit = ({ size = 13, color = "#fff" }) => (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2.2"
+    >
+      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+
+  const AnswerList = () => (
+    <>
+      {!isShort && question.options?.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+          {question.options.map((opt, i) => (
+            <div
+              key={opt.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                border: `1.5px solid ${opt.isCorrect ? "#bbf7d0" : "#f0f0f0"}`,
+                background: opt.isCorrect ? "#f0fdf4" : "#fafafa",
+              }}
+            >
+              <div
+                style={{
+                  width: "22px",
+                  height: "22px",
+                  borderRadius: isMultiple ? "5px" : "50%",
+                  border: `1.5px solid ${opt.isCorrect ? "#16a34a" : "#d1d5db"}`,
+                  background: opt.isCorrect ? "#16a34a" : "transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                {opt.isCorrect ? (
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#fff"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : (
+                  <span
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: 600,
+                      color: "#9ca3af",
+                    }}
+                  >
+                    {ALPHA[i]}
+                  </span>
+                )}
+              </div>
+              <span
+                style={{
+                  fontSize: "16px",
+                  color: opt.isCorrect ? "#15803d" : "#495057",
+                  fontWeight: opt.isCorrect ? 500 : 400,
+                  flex: 1,
+                  lineHeight: "1.4",
+                  wordBreak: "break-word",
+                }}
+              >
+                {opt.optionText}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      {isShort && question.correctAnswers?.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+          <span style={{ fontSize: "16px", color: "#868e96", fontWeight: 500 }}>
+            Đáp án chấp nhận:
+          </span>
+          {question.correctAnswers.map((ans) => (
+            <div
+              key={ans.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                border: "1.5px solid #bbf7d0",
+                background: "#f0fdf4",
+              }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#16a34a"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span
+                style={{
+                  fontSize: "16px",
+                  color: "#15803d",
+                  fontWeight: 500,
+                  wordBreak: "break-word",
+                }}
+              >
+                {ans.answer}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <div
+      className={`question-card${!selectMode ? " has-actions" : " select-mode"}`}
+      onClick={() => {
+        if (selectMode) onToggleCheck(question.id);
+      }}
+      style={{
+        position: "relative",
+        background: isChecked ? "#f5f4ff" : "#fff",
+        borderRadius: "10px",
+        border: `1.5px solid ${isChecked ? "#3d3a8c" : "#f0f0f0"}`,
+        boxShadow: isChecked ? "0 0 0 3px rgba(61,58,140,0.12)" : "none",
+        cursor: selectMode ? "pointer" : "default",
+        padding: "14px 16px 16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+        transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
+        userSelect: "none",
+      }}
+    >
+      {/* Checkbox */}
+      {selectMode && (
+        <div
+          className={`question-checkbox${isChecked ? " is-checked" : ""}`}
+          style={{
+            position: "absolute",
+            top: "12px",
+            right: "12px",
+            zIndex: 2,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleCheck(question.id);
+          }}
+        >
+          <div
+            style={{
+              width: "20px",
+              height: "20px",
+              borderRadius: "5px",
+              border: `2px solid ${isChecked ? "#3d3a8c" : "#ced4da"}`,
+              background: isChecked ? "#3d3a8c" : "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            {isChecked && (
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#fff"
+                strokeWidth="3"
+                strokeLinecap="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Action buttons */}
+      {!selectMode && (
+        <div
+          className="question-actions"
+          style={{
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+            zIndex: 2,
+            display: "flex",
+            gap: "6px",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => onEditSingle(question)}
+            title="Sửa"
+            style={{
+              width: "28px",
+              height: "28px",
+              borderRadius: "7px",
+              background: "#3d3a8c",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <IconEdit size={13} color="#fff" />
+          </button>
+          <button
+            onClick={() => onDeleteSingle(question)}
+            title="Xóa"
+            style={{
+              width: "28px",
+              height: "28px",
+              borderRadius: "7px",
+              background: "#ef4444",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <IconTrash size={13} color="#fff" />
+          </button>
+        </div>
+      )}
+
+      {/* Type badge */}
+      <div className="question-type-badge" style={{ display: "flex" }}>
+        <span
+          style={{
+            fontSize: "15px",
+            fontWeight: 600,
+            padding: "3px 10px",
+            borderRadius: "20px",
+            background: typeColor.bg,
+            color: typeColor.text,
+            whiteSpace: "nowrap",
+            marginLeft: "auto",
+            transition: "padding-right 0.15s",
+            paddingRight: selectMode ? "20px" : "10px",
+            paddingLeft: selectMode ? "20px" : "10px",
+          }}
+        >
+          {typeLabel}
+        </span>
+      </div>
+
+      {hasNonImageMedia && (
+        <MediaBadge
+          mediaType={question.mediaType}
+          mediaUrl={question.mediaUrl}
+        />
+      )}
+
+      {hasImage ? (
+        isWide ? (
+          <div
+            style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}
+          >
+            <div
+              style={{
+                flex: "0 0 calc(50% - 7px)",
+                maxWidth: "calc(50% - 7px)",
+                borderRadius: "8px",
+                overflow: "hidden",
+                border: "1.5px solid #f0f0f0",
+              }}
+            >
+              <MediaBadge
+                mediaType={question.mediaType}
+                mediaUrl={question.mediaUrl}
+              />
+            </div>
+            <div
+              style={{
+                width: "1px",
+                alignSelf: "stretch",
+                background: "#f0f0f0",
+                flexShrink: 0,
+              }}
+            />
+            <div
+              style={{
+                flex: 1,
+                minWidth: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: "7px",
+              }}
+            >
+              <AnswerList />
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+          >
+            <div
+              style={{
+                borderRadius: "8px",
+                overflow: "hidden",
+                border: "1.5px solid #f0f0f0",
+              }}
+            >
+              <MediaBadge
+                mediaType={question.mediaType}
+                mediaUrl={question.mediaUrl}
+              />
+            </div>
+            <AnswerList />
+          </div>
+        )
+      ) : (
+        <AnswerList />
+      )}
+
+      {(question.categoryQuestionName || question.groupQuestionName) && (
+        <div
+          style={{
+            display: "flex",
+            gap: "12px",
+            flexWrap: "nowrap",
+            paddingTop: "6px",
+            borderTop: "1px solid #f5f5f5",
+            overflow: "hidden",
+          }}
+        >
+          {question.categoryQuestionName && (
+            <span
+              style={{
+                fontSize: "16px",
+                color: "#868e96",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                minWidth: 0,
+                overflow: "hidden",
+                flexShrink: question.groupQuestionName ? 1 : 0,
+              }}
+            >
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#adb5bd"
+                strokeWidth="2"
+                strokeLinecap="round"
+                style={{ flexShrink: 0 }}
+              >
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <circle cx="3" cy="6" r="1" fill="#adb5bd" stroke="none" />
+                <circle cx="3" cy="12" r="1" fill="#adb5bd" stroke="none" />
+                <circle cx="3" cy="18" r="1" fill="#adb5bd" stroke="none" />
+              </svg>
+              <span
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {question.categoryQuestionName}
+              </span>
+            </span>
+          )}
+          {question.groupQuestionName && (
+            <span
+              style={{
+                fontSize: "16px",
+                color: "#868e96",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                minWidth: 0,
+                overflow: "hidden",
+                flexShrink: 1,
+              }}
+            >
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#adb5bd"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                style={{ flexShrink: 0 }}
+              >
+                <circle cx="9" cy="9" r="5" />
+                <circle cx="15" cy="9" r="5" />
+                <circle cx="12" cy="15" r="5" />
+              </svg>
+              <span
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {question.groupQuestionName}
+              </span>
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Question = forwardRef((props, ref) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
-
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [showFilter, setShowFilter] = useState(false);
-
   const [filterMode, setFilterMode] = useState(MODE_ALL);
   const [filterCategory, setFilterCategory] = useState(null);
   const [filterGroup, setFilterGroup] = useState(null);
   const [filterType, setFilterType] = useState(null);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
-
   const [showUpdateQuestionModal, setShowUpdateQuestionModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
-
   const [appliedFilter, setAppliedFilter] = useState({
     mode: MODE_ALL,
     category: null,
     group: null,
     type: null,
   });
-
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
-
   const [questions, setQuestions] = useState([]);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
-
-  // ===== Select mode =====
+  const [isFirstPage, setIsFirstPage] = useState(true);
   const [selectMode, setSelectMode] = useState(false);
   const [checked, setChecked] = useState([]);
-
-  // ===== Confirm modal =====
   const [confirmMsg, setConfirmMsg] = useState(null);
   const [confirmCb, setConfirmCb] = useState(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
-
-  // ===== Edit multiple modal =====
   const [showEditModal, setShowEditModal] = useState(false);
   const [editCategory, setEditCategory] = useState(null);
   const [editGroup, setEditGroup] = useState(null);
   const [editLoading, setEditLoading] = useState(false);
-  const [editStep, setEditStep] = useState("form"); // "form" | "category" | "group"
+  const [editStep, setEditStep] = useState("form");
+  const [isWide, setIsWide] = useState(
+    typeof window !== "undefined" ? window.innerWidth >= 768 : true,
+  );
+  const [isNarrow, setIsNarrow] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 480 : false,
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsWide(window.innerWidth >= 768);
+      setIsNarrow(window.innerWidth < 480);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const sentinelRef = useRef(null);
   const abortRef = useRef(null);
+  const skipSearchEffect = useRef(false);
+  const debounceRef = useRef(null);
 
   useImperativeHandle(ref, () => ({
     openCreateModal: () => setShowCreateModal(true),
@@ -341,6 +818,7 @@ const Question = forwardRef((props, ref) => {
     async (pageIndex, reset = false) => {
       if (loading) return;
       setLoading(true);
+      if (reset) setIsFirstPage(true);
       if (abortRef.current) abortRef.current.abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -363,29 +841,40 @@ const Question = forwardRef((props, ref) => {
         setQuestions((prev) => (reset ? data : [...prev, ...data]));
         setPage(pageIndex);
       } catch (err) {
-        if (err?.name !== "CanceledError" && err?.name !== "AbortError") {
-          console.error("Failed to fetch questions:", err);
-        }
+        setHasMore(false);
       } finally {
         setLoading(false);
-        setInitialLoading(false);
+        setIsFirstPage(false);
       }
     },
-    [search, appliedFilter, loading],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [search, appliedFilter],
   );
 
   useEffect(() => {
-    setInitialLoading(true);
+    skipSearchEffect.current = true;
     setQuestions([]);
     setPage(0);
     setHasMore(true);
+    fetchPage(0, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, appliedFilter]);
+  }, []);
 
   useEffect(() => {
-    if (initialLoading) fetchPage(0, true);
+    if (skipSearchEffect.current) {
+      skipSearchEffect.current = false;
+      return;
+    }
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setQuestions([]);
+      setPage(0);
+      setHasMore(true);
+      fetchPage(0, true);
+    }, 200);
+    return () => clearTimeout(debounceRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialLoading]);
+  }, [search, appliedFilter]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -401,7 +890,6 @@ const Question = forwardRef((props, ref) => {
     return () => observer.disconnect();
   }, [hasMore, loading, page, fetchPage]);
 
-  // ===== Select helpers =====
   const exitSelectMode = () => {
     setSelectMode(false);
     setChecked([]);
@@ -410,8 +898,6 @@ const Question = forwardRef((props, ref) => {
     setChecked((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
-
-  // ===== Confirm helpers =====
   const openConfirm = (msg, cb) => {
     setConfirmMsg(msg);
     setConfirmCb(() => cb);
@@ -427,20 +913,22 @@ const Question = forwardRef((props, ref) => {
     try {
       await confirmCb();
       closeConfirm();
-      setInitialLoading(true);
+      setQuestions([]);
+      setPage(0);
+      setHasMore(true);
+      fetchPage(0, true);
     } catch {
-      /* silent */
     } finally {
       setConfirmLoading(false);
     }
   };
 
-  // ===== Delete handlers =====
   const handleDeleteSingle = (question) => {
-    openConfirm(
-      `Câu hỏi <strong>"${question.content.slice(0, 60)}${question.content.length > 60 ? "…" : ""}"</strong> sẽ bị xóa vĩnh viễn.`,
-      () => deleteQuestion(question.id),
-    );
+    const content = question.content?.trim();
+    const message = content
+      ? `Câu hỏi <strong>"${content.slice(0, 60)}${content.length > 15 ? "…" : ""}"</strong> sẽ bị xóa vĩnh viễn.`
+      : "Câu hỏi này sẽ bị xóa vĩnh viễn.";
+    openConfirm(message, () => deleteQuestion(question.id));
   };
 
   const handleDeleteSelected = () => {
@@ -470,7 +958,6 @@ const Question = forwardRef((props, ref) => {
     setFilterType(null);
     setShowTypeDropdown(false);
   };
-
   const handleApplyFilter = () => {
     setAppliedFilter({
       mode: filterMode,
@@ -480,11 +967,9 @@ const Question = forwardRef((props, ref) => {
     });
     setShowFilter(false);
   };
-
   const handleSearchSubmit = (e) => {
     if (e.key === "Enter") setSearch(searchInput);
   };
-
   const handleEditSelected = () => {
     setEditCategory(null);
     setEditGroup(null);
@@ -502,7 +987,10 @@ const Question = forwardRef((props, ref) => {
       });
       setShowEditModal(false);
       exitSelectMode();
-      setInitialLoading(true);
+      setQuestions([]);
+      setPage(0);
+      setHasMore(true);
+      fetchPage(0, true);
     } catch (err) {
       console.error("Failed to update questions:", err);
     } finally {
@@ -516,7 +1004,6 @@ const Question = forwardRef((props, ref) => {
   };
 
   const isDisabled = filterMode === MODE_UNCLASSIFIED;
-
   const activeFilterCount = [
     appliedFilter.mode !== MODE_ALL,
     appliedFilter.category,
@@ -524,7 +1011,6 @@ const Question = forwardRef((props, ref) => {
     appliedFilter.type,
   ].filter(Boolean).length;
 
-  // ===== Icons =====
   const IconSearch = () => (
     <svg
       width="15"
@@ -721,7 +1207,6 @@ const Question = forwardRef((props, ref) => {
     </svg>
   );
 
-  // ===== Skeleton =====
   const SkeletonCard = () => (
     <div
       style={{
@@ -734,36 +1219,33 @@ const Question = forwardRef((props, ref) => {
         gap: "10px",
       }}
     >
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        {[80, 70, 90].map((w, i) => (
+          <div
+            key={i}
+            style={{
+              height: "20px",
+              width: `${w}px`,
+              background:
+                "linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%)",
+              backgroundSize: "200% 100%",
+              borderRadius: "20px",
+              animation: "shimmer 1.5s infinite",
+            }}
+          />
+        ))}
+      </div>
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          height: "16px",
+          width: "75%",
+          background:
+            "linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%)",
+          backgroundSize: "200% 100%",
+          borderRadius: "6px",
+          animation: "shimmer 1.5s infinite",
         }}
-      >
-        <div
-          style={{
-            height: "16px",
-            width: "55%",
-            background:
-              "linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%)",
-            backgroundSize: "200% 100%",
-            borderRadius: "6px",
-            animation: "shimmer 1.5s infinite",
-          }}
-        />
-        <div
-          style={{
-            height: "22px",
-            width: "90px",
-            background:
-              "linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%)",
-            backgroundSize: "200% 100%",
-            borderRadius: "20px",
-            animation: "shimmer 1.5s infinite",
-          }}
-        />
-      </div>
+      />
       {[1, 2, 3].map((i) => (
         <div
           key={i}
@@ -781,406 +1263,6 @@ const Question = forwardRef((props, ref) => {
     </div>
   );
 
-  // ===== Question Card =====
-  const QuestionCard = ({ question }) => {
-    const [hovered, setHovered] = useState(false);
-    const isChecked = checked.includes(question.id);
-
-    const typeColor = QUESTION_TYPE_COLOR[question.questionType] ?? {
-      bg: "#f1f3f5",
-      text: "#495057",
-    };
-    const typeLabel =
-      QUESTION_TYPE_LABEL[question.questionType] ?? question.questionType;
-    const isMultiple = question.questionType === "MULTIPLE_CHOICE";
-    const isShort = question.questionType === "SHORT_ANSWER";
-    const hasMedia = !!(question.mediaUrl && question.mediaType);
-
-    const AnswerSection = () => (
-      <>
-        {!isShort && question.options?.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
-            {question.options.map((opt, i) => (
-              <div
-                key={opt.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "8px 12px",
-                  borderRadius: "8px",
-                  border: `1.5px solid ${opt.isCorrect ? "#bbf7d0" : "#f0f0f0"}`,
-                  background: opt.isCorrect ? "#f0fdf4" : "#fafafa",
-                }}
-              >
-                <div
-                  style={{
-                    width: "22px",
-                    height: "22px",
-                    borderRadius: isMultiple ? "5px" : "50%",
-                    border: `1.5px solid ${opt.isCorrect ? "#16a34a" : "#d1d5db"}`,
-                    background: opt.isCorrect ? "#16a34a" : "transparent",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  {opt.isCorrect ? (
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#fff"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  ) : (
-                    <span
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        color: "#9ca3af",
-                      }}
-                    >
-                      {ALPHA[i]}
-                    </span>
-                  )}
-                </div>
-                <span
-                  style={{
-                    fontSize: "13.5px",
-                    color: opt.isCorrect ? "#15803d" : "#495057",
-                    fontWeight: opt.isCorrect ? 500 : 400,
-                    flex: 1,
-                    lineHeight: "1.4",
-                  }}
-                >
-                  {opt.optionText}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-        {isShort && question.correctAnswers?.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
-            <span
-              style={{ fontSize: "12px", color: "#868e96", fontWeight: 500 }}
-            >
-              Đáp án chấp nhận:
-            </span>
-            {question.correctAnswers.map((ans) => (
-              <div
-                key={ans.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "8px 12px",
-                  borderRadius: "8px",
-                  border: "1.5px solid #bbf7d0",
-                  background: "#f0fdf4",
-                }}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#16a34a"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span
-                  style={{
-                    fontSize: "13.5px",
-                    color: "#15803d",
-                    fontWeight: 500,
-                  }}
-                >
-                  {ans.answer}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </>
-    );
-
-    return (
-      <div
-        onClick={() => {
-          if (selectMode) toggleCheck(question.id);
-        }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          position: "relative",
-          background: isChecked ? "#f5f4ff" : "#fff",
-          borderRadius: "10px",
-          border: `1.5px solid ${isChecked ? "#3d3a8c" : hovered ? "#c5c3e8" : "#f0f0f0"}`,
-          padding: "16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
-          cursor: selectMode ? "pointer" : "default",
-          boxShadow: isChecked
-            ? "0 0 0 3px rgba(61,58,140,0.12)"
-            : hovered
-              ? "0 2px 12px rgba(61,58,140,0.07)"
-              : "none",
-          userSelect: "none",
-        }}
-      >
-        {/* Checkbox — select mode */}
-        {selectMode && (isChecked || hovered) && (
-          <div
-            style={{
-              position: "absolute",
-              top: "12px",
-              right: "12px",
-              zIndex: 2,
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleCheck(question.id);
-            }}
-          >
-            <div
-              style={{
-                width: "20px",
-                height: "20px",
-                borderRadius: "5px",
-                border: `2px solid ${isChecked ? "#3d3a8c" : "#ced4da"}`,
-                background: isChecked ? "#3d3a8c" : "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-              }}
-            >
-              {isChecked && (
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#fff"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Edit + Delete buttons — normal hover mode */}
-        {!selectMode && hovered && (
-          <div
-            style={{
-              position: "absolute",
-              top: "10px",
-              right: "10px",
-              zIndex: 2,
-              display: "flex",
-              gap: "6px",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => handleEditSingle(question)}
-              title="Sửa"
-              style={{
-                width: "28px",
-                height: "28px",
-                borderRadius: "7px",
-                background: "#3d3a8c",
-                border: "none",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <IconEdit size={13} color="#fff" />
-            </button>
-            <button
-              onClick={() => handleDeleteSingle(question)}
-              title="Xóa"
-              style={{
-                width: "28px",
-                height: "28px",
-                borderRadius: "7px",
-                background: "#ef4444",
-                border: "none",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <IconTrash size={13} color="#fff" />
-            </button>
-          </div>
-        )}
-
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: "10px",
-            paddingRight:
-              !selectMode && hovered
-                ? "72px"
-                : selectMode && (isChecked || hovered)
-                  ? "28px"
-                  : "0",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "14px",
-              color: "#212529",
-              fontWeight: 500,
-              lineHeight: "1.5",
-              flex: 1,
-            }}
-          >
-            {question.content}
-          </span>
-          <span
-            style={{
-              flexShrink: 0,
-              fontSize: "11.5px",
-              fontWeight: 600,
-              padding: "3px 10px",
-              borderRadius: "20px",
-              background: typeColor.bg,
-              color: typeColor.text,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {typeLabel}
-          </span>
-        </div>
-
-        {/* Body: split if has media */}
-        {hasMedia ? (
-          <div
-            style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}
-          >
-            <div style={{ flex: "0 0 50%", maxWidth: "50%" }}>
-              <MediaBadge
-                mediaType={question.mediaType}
-                mediaUrl={question.mediaUrl}
-              />
-            </div>
-            <div
-              style={{
-                width: "1px",
-                alignSelf: "stretch",
-                background: "#f0f0f0",
-                flexShrink: 0,
-              }}
-            />
-            <div
-              style={{
-                flex: 1,
-                minWidth: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: "7px",
-              }}
-            >
-              <AnswerSection />
-            </div>
-          </div>
-        ) : (
-          <AnswerSection />
-        )}
-
-        {/* Meta */}
-        {(question.categoryQuestionName || question.groupQuestionName) && (
-          <div
-            style={{
-              display: "flex",
-              gap: "12px",
-              flexWrap: "wrap",
-              paddingTop: "4px",
-              borderTop: "1px solid #f5f5f5",
-            }}
-          >
-            {question.categoryQuestionName && (
-              <span
-                style={{
-                  fontSize: "12px",
-                  color: "#868e96",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#adb5bd"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <line x1="8" y1="6" x2="21" y2="6" />
-                  <line x1="8" y1="12" x2="21" y2="12" />
-                  <line x1="8" y1="18" x2="21" y2="18" />
-                  <circle cx="3" cy="6" r="1" fill="#adb5bd" stroke="none" />
-                  <circle cx="3" cy="12" r="1" fill="#adb5bd" stroke="none" />
-                  <circle cx="3" cy="18" r="1" fill="#adb5bd" stroke="none" />
-                </svg>
-                {question.categoryQuestionName}
-              </span>
-            )}
-            {question.groupQuestionName && (
-              <span
-                style={{
-                  fontSize: "12px",
-                  color: "#868e96",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#adb5bd"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                >
-                  <circle cx="9" cy="9" r="5" />
-                  <circle cx="15" cy="9" r="5" />
-                  <circle cx="12" cy="15" r="5" />
-                </svg>
-                {question.groupQuestionName}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   const overlayStyle = {
     position: "fixed",
     inset: 0,
@@ -1189,14 +1271,17 @@ const Question = forwardRef((props, ref) => {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    padding: "0 12px",
+    boxSizing: "border-box",
   };
   const modalStyle = {
     background: "#fff",
     borderRadius: "12px",
-    padding: "20px 24px 24px",
+    padding: "20px 16px 24px",
     width: "100%",
     maxWidth: "360px",
     boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+    boxSizing: "border-box",
   };
   const inputRowStyle = {
     display: "flex",
@@ -1221,11 +1306,12 @@ const Question = forwardRef((props, ref) => {
           display: "flex",
           alignItems: "center",
           gap: "7px",
-          padding: "5px 10px",
+          padding: "5px 8px",
           borderRadius: "7px",
           cursor: "pointer",
           background: active ? "#f0effc" : "transparent",
           flex: 1,
+          minWidth: 0,
           transition: "background 0.15s",
           userSelect: "none",
         }}
@@ -1253,9 +1339,10 @@ const Question = forwardRef((props, ref) => {
         </div>
         <span
           style={{
-            fontSize: "13.5px",
+            fontSize: "16px",
             color: active ? "#3d3a8c" : "#495057",
             fontWeight: active ? 600 : 400,
+            wordBreak: "break-word",
           }}
         >
           {label}
@@ -1264,11 +1351,23 @@ const Question = forwardRef((props, ref) => {
     );
   };
 
+  const showSkeleton = loading && isFirstPage && questions.length === 0;
+  const showLoadMore = loading && !isFirstPage;
+  const showEmpty = !loading && questions.length === 0;
+
   return (
     <>
       <style>{`
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .question-card.has-actions:hover { border-color: #c5c3e8 !important; box-shadow: 0 2px 12px rgba(61,58,140,0.07) !important; }
+        .question-actions { opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+        .question-card:hover .question-actions { opacity: 1; pointer-events: auto; }
+        .question-card.has-actions:hover .question-type-badge { padding-right: 72px; }
+       
+        .question-checkbox { opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+        .question-checkbox.is-checked { opacity: 1; pointer-events: auto; }
+        .question-card.select-mode:hover .question-checkbox { opacity: 1; pointer-events: auto; }
       `}</style>
 
       {showCreateModal && (
@@ -1276,11 +1375,13 @@ const Question = forwardRef((props, ref) => {
           onClose={() => setShowCreateModal(false)}
           onSuccess={() => {
             setShowCreateModal(false);
-            setInitialLoading(true);
+            setQuestions([]);
+            setPage(0);
+            setHasMore(true);
+            fetchPage(0, true);
           }}
         />
       )}
-
       {showUpdateQuestionModal && editingQuestion && (
         <UpdateQuestion
           question={editingQuestion}
@@ -1291,11 +1392,13 @@ const Question = forwardRef((props, ref) => {
           onSuccess={() => {
             setShowUpdateQuestionModal(false);
             setEditingQuestion(null);
-            setInitialLoading(true);
+            setQuestions([]);
+            setPage(0);
+            setHasMore(true);
+            fetchPage(0, true);
           }}
         />
       )}
-
       {showCategoryModal && (
         <CategorySearch
           value={filterCategory}
@@ -1347,7 +1450,7 @@ const Question = forwardRef((props, ref) => {
               }}
             >
               <span
-                style={{ fontWeight: 600, fontSize: "15px", color: "#212529" }}
+                style={{ fontWeight: 600, fontSize: "16px", color: "#212529" }}
               >
                 Filter
               </span>
@@ -1359,6 +1462,7 @@ const Question = forwardRef((props, ref) => {
                   cursor: "pointer",
                   padding: "2px",
                   display: "flex",
+                  flexShrink: 0,
                 }}
               >
                 <IconClose />
@@ -1370,6 +1474,7 @@ const Question = forwardRef((props, ref) => {
                 gap: "4px",
                 padding: "4px 0 10px",
                 borderBottom: "1.5px solid #f0f0f0",
+                flexWrap: "wrap",
               }}
             >
               <RadioOption mode={MODE_ALL} label="Tất cả" />
@@ -1388,8 +1493,12 @@ const Question = forwardRef((props, ref) => {
                 <span
                   style={{
                     flex: 1,
-                    fontSize: "13.5px",
+                    fontSize: "16px",
                     color: filterType ? "#212529" : "#adb5bd",
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {filterType
@@ -1406,6 +1515,7 @@ const Question = forwardRef((props, ref) => {
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
+                      flexShrink: 0,
                     }}
                   >
                     <IconClose />
@@ -1439,7 +1549,7 @@ const Question = forwardRef((props, ref) => {
                           borderRadius: "7px",
                           cursor: "pointer",
                           background: active ? "#f0effc" : "transparent",
-                          fontSize: "13.5px",
+                          fontSize: "16px",
                           color: active ? "#3d3a8c" : "#495057",
                           fontWeight: active ? 600 : 400,
                         }}
@@ -1452,7 +1562,9 @@ const Question = forwardRef((props, ref) => {
                             e.currentTarget.style.background = "transparent";
                         }}
                       >
-                        <span>{type.label}</span>
+                        <span style={{ wordBreak: "break-word" }}>
+                          {type.label}
+                        </span>
                         {active && <IconCheck />}
                       </div>
                     );
@@ -1476,8 +1588,12 @@ const Question = forwardRef((props, ref) => {
               <span
                 style={{
                   flex: 1,
-                  fontSize: "13.5px",
+                  fontSize: "16px",
                   color: filterCategory ? "#212529" : "#adb5bd",
+                  minWidth: 0,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {filterCategory ? filterCategory.name : "Chọn danh mục"}
@@ -1492,6 +1608,7 @@ const Question = forwardRef((props, ref) => {
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
+                    flexShrink: 0,
                   }}
                 >
                   <IconClose />
@@ -1515,8 +1632,12 @@ const Question = forwardRef((props, ref) => {
               <span
                 style={{
                   flex: 1,
-                  fontSize: "13.5px",
+                  fontSize: "16px",
                   color: filterGroup ? "#212529" : "#adb5bd",
+                  minWidth: 0,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {filterGroup ? filterGroup.name : "Chọn nhóm câu hỏi"}
@@ -1531,6 +1652,7 @@ const Question = forwardRef((props, ref) => {
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
+                    flexShrink: 0,
                   }}
                 >
                   <IconClose />
@@ -1545,6 +1667,7 @@ const Question = forwardRef((props, ref) => {
                 alignItems: "center",
                 gap: "8px",
                 marginTop: "24px",
+                flexWrap: "wrap",
               }}
             >
               <button
@@ -1553,7 +1676,7 @@ const Question = forwardRef((props, ref) => {
                   background: "none",
                   border: "none",
                   cursor: "pointer",
-                  fontSize: "13.5px",
+                  fontSize: "16px",
                   color: "#212529",
                   padding: "7px 12px",
                 }}
@@ -1567,9 +1690,9 @@ const Question = forwardRef((props, ref) => {
                   border: "1.5px solid #e9ecef",
                   borderRadius: "8px",
                   cursor: "pointer",
-                  fontSize: "13.5px",
+                  fontSize: "16px",
                   color: "#212529",
-                  padding: "7px 16px",
+                  padding: "7px 14px",
                 }}
               >
                 Hủy
@@ -1581,9 +1704,9 @@ const Question = forwardRef((props, ref) => {
                   border: "none",
                   borderRadius: "8px",
                   cursor: "pointer",
-                  fontSize: "13.5px",
+                  fontSize: "16px",
                   color: "#fff",
-                  padding: "7px 16px",
+                  padding: "7px 14px",
                   fontWeight: 600,
                 }}
               >
@@ -1594,7 +1717,6 @@ const Question = forwardRef((props, ref) => {
         </div>
       )}
 
-      {/* Edit multiple modal */}
       {showEditModal && editStep === "category" && (
         <CategorySearch
           value={editCategory}
@@ -1615,6 +1737,7 @@ const Question = forwardRef((props, ref) => {
           onClose={() => setEditStep("group")}
         />
       )}
+
       {showEditModal && editStep === "form" && (
         <>
           <div
@@ -1633,32 +1756,35 @@ const Question = forwardRef((props, ref) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              padding: "0 12px",
+              boxSizing: "border-box",
             }}
           >
             <div
               style={{
                 background: "#fff",
                 borderRadius: "14px",
-                padding: "24px",
+                padding: "24px 16px",
                 width: "100%",
                 maxWidth: "380px",
                 boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+                boxSizing: "border-box",
               }}
             >
-              {/* Header */}
               <div
                 style={{
                   display: "flex",
-                  alignItems: "center",
+                  alignItems: "flex-start",
                   justifyContent: "space-between",
                   marginBottom: "18px",
+                  gap: "8px",
                 }}
               >
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <div
                     style={{
                       fontWeight: 700,
-                      fontSize: "15px",
+                      fontSize: "16px",
                       color: "#0f172a",
                     }}
                   >
@@ -1666,7 +1792,7 @@ const Question = forwardRef((props, ref) => {
                   </div>
                   <div
                     style={{
-                      fontSize: "12.5px",
+                      fontSize: "16px",
                       color: "#64748b",
                       marginTop: "2px",
                     }}
@@ -1682,13 +1808,12 @@ const Question = forwardRef((props, ref) => {
                     cursor: "pointer",
                     padding: "2px",
                     display: "flex",
+                    flexShrink: 0,
                   }}
                 >
                   <IconClose />
                 </button>
               </div>
-
-              {/* Category row */}
               <div
                 onClick={() => setEditStep("category")}
                 style={{
@@ -1712,6 +1837,7 @@ const Question = forwardRef((props, ref) => {
                   stroke="#3d3a8c"
                   strokeWidth="1.5"
                   strokeLinecap="round"
+                  style={{ flexShrink: 0 }}
                 >
                   <line x1="8" y1="6" x2="21" y2="6" />
                   <line x1="8" y1="12" x2="21" y2="12" />
@@ -1723,9 +1849,13 @@ const Question = forwardRef((props, ref) => {
                 <span
                   style={{
                     flex: 1,
-                    fontSize: "13.5px",
+                    fontSize: "16px",
                     color: editCategory ? "#3d3a8c" : "#adb5bd",
                     fontWeight: editCategory ? 500 : 400,
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {editCategory ? editCategory.name : "Chọn danh mục"}
@@ -1740,6 +1870,7 @@ const Question = forwardRef((props, ref) => {
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
+                      flexShrink: 0,
                     }}
                   >
                     <IconClose />
@@ -1753,12 +1884,11 @@ const Question = forwardRef((props, ref) => {
                   stroke="#adb5bd"
                   strokeWidth="2"
                   strokeLinecap="round"
+                  style={{ flexShrink: 0 }}
                 >
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </div>
-
-              {/* Group row */}
               <div
                 onClick={() => setEditStep("group")}
                 style={{
@@ -1782,6 +1912,7 @@ const Question = forwardRef((props, ref) => {
                   stroke="#3d3a8c"
                   strokeWidth="1.5"
                   strokeLinecap="round"
+                  style={{ flexShrink: 0 }}
                 >
                   <circle cx="9" cy="9" r="5" />
                   <circle cx="15" cy="9" r="5" />
@@ -1790,9 +1921,13 @@ const Question = forwardRef((props, ref) => {
                 <span
                   style={{
                     flex: 1,
-                    fontSize: "13.5px",
+                    fontSize: "16px",
                     color: editGroup ? "#3d3a8c" : "#adb5bd",
                     fontWeight: editGroup ? 500 : 400,
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {editGroup ? editGroup.name : "Chọn nhóm câu hỏi"}
@@ -1807,6 +1942,7 @@ const Question = forwardRef((props, ref) => {
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
+                      flexShrink: 0,
                     }}
                   >
                     <IconClose />
@@ -1820,27 +1956,27 @@ const Question = forwardRef((props, ref) => {
                   stroke="#adb5bd"
                   strokeWidth="2"
                   strokeLinecap="round"
+                  style={{ flexShrink: 0 }}
                 >
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </div>
-
-              {/* Footer */}
               <div
                 style={{
                   display: "flex",
                   justifyContent: "flex-end",
                   gap: "8px",
+                  flexWrap: "wrap",
                 }}
               >
                 <button
                   onClick={() => setShowEditModal(false)}
                   style={{
-                    padding: "8px 20px",
+                    padding: "8px 18px",
                     borderRadius: "8px",
                     border: "1.5px solid #e9ecef",
                     background: "#fff",
-                    fontSize: "13.5px",
+                    fontSize: "16px",
                     cursor: "pointer",
                   }}
                 >
@@ -1850,12 +1986,12 @@ const Question = forwardRef((props, ref) => {
                   disabled={editLoading}
                   onClick={handleConfirmEdit}
                   style={{
-                    padding: "8px 20px",
+                    padding: "8px 18px",
                     borderRadius: "8px",
                     border: "none",
                     background: "#3d3a8c",
                     color: "#fff",
-                    fontSize: "13.5px",
+                    fontSize: "16px",
                     fontWeight: 600,
                     cursor: editLoading ? "not-allowed" : "pointer",
                     display: "flex",
@@ -1883,101 +2019,57 @@ const Question = forwardRef((props, ref) => {
         </>
       )}
 
-      {/* Toolbar: Search + Filter + Select */}
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
-          <span
+      {/* Toolbar */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div
             style={{
-              position: "absolute",
-              left: "12px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              pointerEvents: "none",
+              position: "relative",
+              flex: 1,
+              minWidth: "120px",
+              maxWidth: "400px",
             }}
           >
-            <IconSearch />
-          </span>
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={handleSearchSubmit}
-            placeholder="Enter để tìm kiếm..."
-            style={{
-              width: "100%",
-              padding: "8px 12px 8px 36px",
-              border: "1.5px solid #e9ecef",
-              borderRadius: "8px",
-              fontSize: "13.5px",
-              color: "#212529",
-              outline: "none",
-              transition: "border-color 0.2s, box-shadow 0.2s",
-              boxSizing: "border-box",
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = "#3d3a8c";
-              e.target.style.boxShadow = "0 0 0 3px rgba(61,58,140,0.12)";
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = "#e9ecef";
-              e.target.style.boxShadow = "none";
-            }}
-          />
-        </div>
-        <button
-          onClick={() => setShowFilter(true)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "7px 14px",
-            border: "1.5px solid #e9ecef",
-            borderRadius: "8px",
-            background: activeFilterCount > 0 ? "#f0effc" : "#fff",
-            color: activeFilterCount > 0 ? "#3d3a8c" : "#212529",
-            fontSize: "13.5px",
-            cursor: "pointer",
-            position: "relative",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "#3d3a8c";
-            e.currentTarget.style.color = "#3d3a8c";
-          }}
-          onMouseLeave={(e) => {
-            if (!activeFilterCount) {
-              e.currentTarget.style.borderColor = "#e9ecef";
-              e.currentTarget.style.color = "#212529";
-            }
-          }}
-        >
-          Lọc <IconFilter />
-          {activeFilterCount > 0 && (
             <span
               style={{
                 position: "absolute",
-                top: "-6px",
-                right: "-6px",
-                background: "#3d3a8c",
-                color: "#fff",
-                borderRadius: "50%",
-                width: "17px",
-                height: "17px",
-                fontSize: "10px",
-                fontWeight: 700,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                left: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                pointerEvents: "none",
               }}
             >
-              {activeFilterCount}
+              <IconSearch />
             </span>
-          )}
-        </button>
-
-        {!selectMode ? (
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={handleSearchSubmit}
+              placeholder="Enter để tìm kiếm..."
+              style={{
+                width: "100%",
+                padding: "8px 12px 8px 36px",
+                border: "1.5px solid #e9ecef",
+                borderRadius: "8px",
+                fontSize: "16px",
+                color: "#212529",
+                outline: "none",
+                transition: "border-color 0.2s, box-shadow 0.2s",
+                boxSizing: "border-box",
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "#3d3a8c";
+                e.target.style.boxShadow = "0 0 0 3px rgba(61,58,140,0.12)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "#e9ecef";
+                e.target.style.boxShadow = "none";
+              }}
+            />
+          </div>
           <button
-            onClick={() => setSelectMode(true)}
-            disabled={questions.length === 0}
+            onClick={() => setShowFilter(true)}
             style={{
               display: "flex",
               alignItems: "center",
@@ -1985,45 +2077,157 @@ const Question = forwardRef((props, ref) => {
               padding: "7px 14px",
               border: "1.5px solid #e9ecef",
               borderRadius: "8px",
-              background: "#fff",
-              color: "#212529",
-              fontSize: "13.5px",
-              cursor: questions.length === 0 ? "not-allowed" : "pointer",
-              opacity: questions.length === 0 ? 0.5 : 1,
+              background: activeFilterCount > 0 ? "#f0effc" : "#fff",
+              color: activeFilterCount > 0 ? "#3d3a8c" : "#212529",
+              fontSize: "16px",
+              cursor: "pointer",
+              position: "relative",
               whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
             onMouseEnter={(e) => {
-              if (questions.length > 0) {
-                e.currentTarget.style.borderColor = "#3d3a8c";
-                e.currentTarget.style.color = "#3d3a8c";
-              }
+              e.currentTarget.style.borderColor = "#3d3a8c";
+              e.currentTarget.style.color = "#3d3a8c";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "#e9ecef";
-              e.currentTarget.style.color = "#212529";
+              if (!activeFilterCount) {
+                e.currentTarget.style.borderColor = "#e9ecef";
+                e.currentTarget.style.color = "#212529";
+              }
             }}
           >
-            <IconSelect /> Chọn
+            Lọc <IconFilter />
+            {activeFilterCount > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: "-6px",
+                  right: "-6px",
+                  background: "#3d3a8c",
+                  color: "#fff",
+                  borderRadius: "50%",
+                  width: "17px",
+                  height: "17px",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {activeFilterCount}
+              </span>
+            )}
           </button>
-        ) : (
-          <button
-            onClick={exitSelectMode}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "7px 14px",
-              border: "1.5px solid #e9ecef",
-              borderRadius: "8px",
-              background: "#fff",
-              color: "#212529",
-              fontSize: "13.5px",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Hủy
-          </button>
+          {!isNarrow &&
+            (!selectMode ? (
+              <button
+                onClick={() => setSelectMode(true)}
+                disabled={questions.length === 0}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "7px 14px",
+                  border: "1.5px solid #e9ecef",
+                  borderRadius: "8px",
+                  background: "#fff",
+                  color: "#212529",
+                  fontSize: "16px",
+                  cursor: questions.length === 0 ? "not-allowed" : "pointer",
+                  opacity: questions.length === 0 ? 0.5 : 1,
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => {
+                  if (questions.length > 0) {
+                    e.currentTarget.style.borderColor = "#3d3a8c";
+                    e.currentTarget.style.color = "#3d3a8c";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "#e9ecef";
+                  e.currentTarget.style.color = "#212529";
+                }}
+              >
+                <IconSelect /> Chọn
+              </button>
+            ) : (
+              <button
+                onClick={exitSelectMode}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "7px 14px",
+                  border: "1.5px solid #e9ecef",
+                  borderRadius: "8px",
+                  background: "#fff",
+                  color: "#212529",
+                  fontSize: "16px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+              >
+                Hủy
+              </button>
+            ))}
+        </div>
+        {isNarrow && (
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            {!selectMode ? (
+              <button
+                onClick={() => setSelectMode(true)}
+                disabled={questions.length === 0}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "7px 14px",
+                  border: "1.5px solid #e9ecef",
+                  borderRadius: "8px",
+                  background: "#fff",
+                  color: "#212529",
+                  fontSize: "16px",
+                  cursor: questions.length === 0 ? "not-allowed" : "pointer",
+                  opacity: questions.length === 0 ? 0.5 : 1,
+                  whiteSpace: "nowrap",
+                }}
+                onMouseEnter={(e) => {
+                  if (questions.length > 0) {
+                    e.currentTarget.style.borderColor = "#3d3a8c";
+                    e.currentTarget.style.color = "#3d3a8c";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "#e9ecef";
+                  e.currentTarget.style.color = "#212529";
+                }}
+              >
+                <IconSelect /> Chọn
+              </button>
+            ) : (
+              <button
+                onClick={exitSelectMode}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "7px 14px",
+                  border: "1.5px solid #e9ecef",
+                  borderRadius: "8px",
+                  background: "#fff",
+                  color: "#212529",
+                  fontSize: "16px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Hủy
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -2039,9 +2243,17 @@ const Question = forwardRef((props, ref) => {
             background: "#f8f7ff",
             borderRadius: "8px",
             border: "1.5px solid #e8e6f9",
+            flexWrap: "wrap",
           }}
         >
-          <div style={{ display: "flex", gap: "8px", marginLeft: "auto" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "8px",
+              marginLeft: "auto",
+              flexWrap: "wrap",
+            }}
+          >
             <button
               onClick={handleEditSelected}
               disabled={checked.length === 0}
@@ -2049,14 +2261,15 @@ const Question = forwardRef((props, ref) => {
                 display: "flex",
                 alignItems: "center",
                 gap: "6px",
-                padding: "6px 14px",
+                padding: "6px 12px",
                 borderRadius: "7px",
                 border: `1.5px solid ${checked.length === 0 ? "#e9ecef" : "#3d3a8c"}`,
                 background: "#fff",
                 color: checked.length === 0 ? "#adb5bd" : "#3d3a8c",
-                fontSize: "13px",
-                fontWeight: 600,
+                fontSize: "16px",
+                fontWeight: 500,
                 cursor: checked.length === 0 ? "not-allowed" : "pointer",
+                whiteSpace: "nowrap",
               }}
             >
               <IconEdit
@@ -2072,14 +2285,15 @@ const Question = forwardRef((props, ref) => {
                 display: "flex",
                 alignItems: "center",
                 gap: "6px",
-                padding: "6px 14px",
+                padding: "6px 12px",
                 borderRadius: "7px",
                 border: "none",
                 background: checked.length === 0 ? "#f1f3f5" : "#ef4444",
                 color: checked.length === 0 ? "#adb5bd" : "#fff",
-                fontSize: "13px",
-                fontWeight: 600,
+                fontSize: "16px",
+                fontWeight: 500,
                 cursor: checked.length === 0 ? "not-allowed" : "pointer",
+                whiteSpace: "nowrap",
               }}
             >
               <IconTrash
@@ -2095,15 +2309,16 @@ const Question = forwardRef((props, ref) => {
                 display: "flex",
                 alignItems: "center",
                 gap: "6px",
-                padding: "6px 14px",
+                padding: "6px 12px",
                 borderRadius: "7px",
                 border: "1.5px solid #ef4444",
                 background: "#fff",
                 color: "#ef4444",
-                fontSize: "13px",
+                fontSize: "16px",
                 fontWeight: 500,
                 cursor: questions.length === 0 ? "not-allowed" : "pointer",
                 opacity: questions.length === 0 ? 0.5 : 1,
+                whiteSpace: "nowrap",
               }}
             >
               <IconTrash size={13} color="#ef4444" />
@@ -2122,12 +2337,21 @@ const Question = forwardRef((props, ref) => {
           gap: "10px",
         }}
       >
-        {initialLoading && [1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
-
-        {!initialLoading &&
-          questions.map((q) => <QuestionCard key={q.id} question={q} />)}
-
-        {!initialLoading && !loading && questions.length === 0 && (
+        {showSkeleton && [1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
+        {!showSkeleton &&
+          questions.map((q) => (
+            <QuestionCard
+              key={q.id}
+              question={q}
+              selectMode={selectMode}
+              isChecked={checked.includes(q.id)}
+              isWide={isWide}
+              onToggleCheck={toggleCheck}
+              onEditSingle={handleEditSingle}
+              onDeleteSingle={handleDeleteSingle}
+            />
+          ))}
+        {showEmpty && (
           <div
             style={{ textAlign: "center", padding: "48px 0", color: "#adb5bd" }}
           >
@@ -2144,14 +2368,13 @@ const Question = forwardRef((props, ref) => {
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
             <div
-              style={{ fontSize: "14px", fontWeight: 500, color: "#6c757d" }}
+              style={{ fontSize: "16px", fontWeight: 500, color: "#6c757d" }}
             >
               Không tìm thấy câu hỏi nào
             </div>
           </div>
         )}
-
-        {loading && !initialLoading && (
+        {showLoadMore && (
           <div
             style={{
               display: "flex",
@@ -2171,7 +2394,6 @@ const Question = forwardRef((props, ref) => {
             />
           </div>
         )}
-
         <div ref={sentinelRef} style={{ height: "1px" }} />
       </div>
     </>

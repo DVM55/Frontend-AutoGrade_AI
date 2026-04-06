@@ -23,8 +23,6 @@ const Category = forwardRef((props, ref) => {
   });
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [hoveredRow, setHoveredRow] = useState(null);
-  const [hoveredDot, setHoveredDot] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [search, setSearch] = useState("");
 
@@ -32,9 +30,29 @@ const Category = forwardRef((props, ref) => {
   const [editModal, setEditModal] = useState(null);
   const [deleteModal, setDeleteModal] = useState(null);
   const [editName, setEditName] = useState("");
+  const [editNameError, setEditNameError] = useState("");
+  const [editApiError, setEditApiError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const isSearching = useRef(false);
+  const dropdownRefs = useRef({});
+
+  // Click-outside để đóng dropdown
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (openDropdown === null) return;
+      const el = dropdownRefs.current[openDropdown];
+      if (el && !el.contains(e.target)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [openDropdown]);
 
   const fetchCategories = async (p = 0, name = search) => {
     setLoading(true);
@@ -47,13 +65,11 @@ const Category = forwardRef((props, ref) => {
       setCategories(res.data);
       setMeta(res.meta);
     } catch {
-      toast.error("Không thể tải danh sách category");
     } finally {
       setLoading(false);
     }
   };
 
-  // Một effect duy nhất xử lý tất cả
   useEffect(() => {
     if (isSearching.current) {
       const timer = setTimeout(() => {
@@ -62,7 +78,6 @@ const Category = forwardRef((props, ref) => {
       }, 200);
       return () => clearTimeout(timer);
     }
-
     fetchCategories(page, search);
   }, [search, page]);
 
@@ -78,23 +93,57 @@ const Category = forwardRef((props, ref) => {
   const handleOpenEdit = (cat) => {
     setEditModal(cat);
     setEditName(cat.name);
+    setEditNameError("");
+    setEditApiError("");
+    setOpenDropdown(null);
+  };
+
+  const handleCloseEdit = () => {
+    setEditModal(null);
+    setEditName("");
+    setEditNameError("");
+    setEditApiError("");
+  };
+
+  const validateEdit = () => {
+    if (!editName.trim()) {
+      setEditNameError("Tên không được để trống");
+      return false;
+    }
+    if (editName.trim().length < 2) {
+      setEditNameError("Tên phải có ít nhất 2 ký tự");
+      return false;
+    }
+    if (editName.trim().length > 100) {
+      setEditNameError("Tên không được vượt quá 100 ký tự");
+      return false;
+    }
+    setEditNameError("");
+    return true;
   };
 
   const handleEdit = async () => {
-    if (!editName.trim()) return;
+    if (!validateEdit()) return;
     setSubmitting(true);
+    setEditApiError("");
     try {
       await updateCategory(editModal.id, { name: editName.trim() });
       toast.success("Cập nhật thành công");
-      setEditModal(null);
+      handleCloseEdit();
       fetchCategories(page, search);
     } catch (err) {
-      const message =
-        err?.response?.data?.message || err?.message || "Cập nhật thất bại";
-      toast.error(message);
+      setEditApiError(
+        err?.response?.data?.message || err?.message || "Cập nhật thất bại",
+      );
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleEditNameChange = (e) => {
+    setEditName(e.target.value);
+    if (editNameError) setEditNameError("");
+    if (editApiError) setEditApiError("");
   };
 
   const handleDelete = async () => {
@@ -105,19 +154,17 @@ const Category = forwardRef((props, ref) => {
       setDeleteModal(null);
       fetchCategories(page, search);
     } catch (err) {
-      const message =
-        err?.response?.data?.message || err?.message || "Xóa thất bại";
-      toast.error(message);
+      toast.error(
+        err?.response?.data?.message || err?.message || "Xóa thất bại",
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
-  const dropdownRef = (el, id) => {
-    if (!el || el._bsListened) return;
-    el._bsListened = true;
-    el.addEventListener("show.bs.dropdown", () => setOpenDropdown(id));
-    el.addEventListener("hidden.bs.dropdown", () => setOpenDropdown(null));
+  const toggleDropdown = (id, e) => {
+    e.stopPropagation();
+    setOpenDropdown((prev) => (prev === id ? null : id));
   };
 
   const IconList = () => (
@@ -141,146 +188,461 @@ const Category = forwardRef((props, ref) => {
   );
 
   const IconDots = () => (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      strokeWidth="2"
-      strokeLinecap="round"
-    >
-      <circle cx="12" cy="5" r="1.5" fill="#6c757d" stroke="none" />
-      <circle cx="12" cy="12" r="1.5" fill="#6c757d" stroke="none" />
-      <circle cx="12" cy="19" r="1.5" fill="#6c757d" stroke="none" />
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="5" r="1.5" fill="#6c757d" />
+      <circle cx="12" cy="12" r="1.5" fill="#6c757d" />
+      <circle cx="12" cy="19" r="1.5" fill="#6c757d" />
     </svg>
   );
 
-  const overlayStyle = {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.45)",
-    zIndex: 1050,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  };
-  const modalStyle = {
-    background: "#fff",
-    borderRadius: "12px",
-    padding: "24px",
-    width: "100%",
-    maxWidth: "420px",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
-  };
+  const IconWarning = () => (
+    <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+      <circle cx="26" cy="26" r="26" fill="#fff3e0" />
+      <path
+        d="M26 14l12 22H14L26 14z"
+        fill="none"
+        stroke="#f57c00"
+        strokeWidth="2.2"
+        strokeLinejoin="round"
+      />
+      <rect x="25" y="23" width="2" height="7" rx="1" fill="#f57c00" />
+      <circle cx="26" cy="33" r="1.2" fill="#f57c00" />
+    </svg>
+  );
 
   return (
     <div>
-      {/* ===== Edit Modal ===== */}
+      <style>{`
+        /* ===== OVERLAY ===== */
+        .cat-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.45);
+          z-index: 1050;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 12px;
+          box-sizing: border-box;
+        }
+
+        /* ===== EDIT MODAL — style giống Profile ===== */
+        .cat-edit-modal {
+          background: #fff;
+          border-radius: 12px;
+          width: 100%;
+          max-width: 400px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+          box-sizing: border-box;
+          padding: 20px 16px;
+        }
+
+        .cat-edit-modal-header {
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+
+        .cat-edit-modal-close {
+          background: none;
+          border: none;
+          font-size: 22px;
+          cursor: pointer;
+          color: #888;
+          line-height: 1;
+          padding: 0 4px;
+          transition: color 0.15s;
+        }
+
+        .cat-edit-modal-close:hover { color: #212529; }
+        .cat-edit-modal-close:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .cat-alert-banner {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.5rem;
+          padding: 0.65rem 0.85rem;
+          border-radius: 8px;
+          font-size: 14px;
+          line-height: 1.5;
+          margin-bottom: 12px;
+          word-break: break-word;
+          background: #fff5f5;
+          border: 1px solid #f5c2c7;
+          color: #842029;
+        }
+
+        .cat-edit-field { margin-bottom: 16px; }
+
+        .cat-edit-label {
+          display: block;
+          margin-bottom: 8px;
+          font-weight: 600;
+          font-size: 16px;
+          color: #333;
+        }
+
+        .cat-required { color: #dc3545; margin-left: 2px; }
+
+        .cat-edit-input {
+          width: 100%;
+          padding: 10px 12px;
+          border-radius: 8px;
+          border: 1px solid #ddd;
+          font-size: 16px;
+          outline: none;
+          box-sizing: border-box;
+          -webkit-appearance: none;
+          appearance: none;
+          background: #fff;
+          transition: border-color 0.2s, box-shadow 0.2s;
+          color: #212529;
+        }
+
+        .cat-edit-input:focus {
+          border-color: #3d3a8c;
+          box-shadow: 0 0 0 3px rgba(61,58,140,0.12);
+        }
+
+        .cat-edit-input.is-error {
+          border-color: #dc3545;
+          box-shadow: 0 0 0 2px rgba(220,53,69,0.12);
+        }
+
+        .cat-field-error {
+          font-size: 0.78rem;
+          color: #dc3545;
+          margin-top: 0.3rem;
+          min-height: 1em;
+          line-height: 1.4;
+        }
+
+        .cat-edit-actions {
+          display: flex;
+          gap: 8px;
+          justify-content: flex-end;
+        }
+
+        .cat-btn-cancel-sm {
+          padding: 9px 16px;
+          border-radius: 8px;
+          border: 1px solid #ddd;
+          background: #fff;
+          cursor: pointer;
+          font-size: 14px;
+          color: #444;
+          transition: background 0.15s;
+        }
+
+        .cat-btn-cancel-sm:hover { background: #f0f0f0; }
+        .cat-btn-cancel-sm:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .cat-btn-save {
+          padding: 9px 16px;
+          border-radius: 8px;
+          border: none;
+          background: #3d3a8c;
+          color: #fff;
+          cursor: pointer;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          transition: background 0.15s, opacity 0.15s;
+        }
+
+        .cat-btn-save:hover:not(:disabled) { background: #2e2b6e; }
+        .cat-btn-save:disabled { opacity: 0.65; cursor: not-allowed; }
+
+        /* ===== DELETE MODAL — style như ảnh ===== */
+        .cat-delete-modal {
+          background: #fff;
+          border-radius: 16px;
+          width: 100%;
+          max-width: 340px;
+          box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+          box-sizing: border-box;
+          padding: 32px 24px 24px;
+          text-align: center;
+        }
+
+        .cat-delete-icon { margin-bottom: 16px; }
+
+        .cat-delete-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: #212529;
+          margin: 0 0 10px;
+          line-height: 1.3;
+        }
+
+        .cat-delete-desc {
+          font-size: 15px;
+          color: #6c757d;
+          margin: 0 0 24px;
+          line-height: 1.6;
+          word-break: keep-all;
+          overflow-wrap: break-word;
+        }
+
+        .cat-delete-name {
+          color: #212529;
+          font-weight: 600;
+        }
+
+        .cat-delete-actions {
+          display: flex;
+          gap: 10px;
+        }
+
+        .cat-delete-cancel {
+          flex: 1;
+          padding: 10px;
+          border-radius: 10px;
+          border: 1px solid #dee2e6;
+          background: #fff;
+          font-size: 14px;
+          font-weight: 500;
+          color: #444;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+
+        .cat-delete-cancel:hover { background: #f0f0f0; }
+        .cat-delete-cancel:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .cat-delete-confirm {
+          flex: 1;
+          padding: 10px;
+          border-radius: 10px;
+          border: none;
+          background: #dc3545;
+          color: #fff;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          transition: background 0.15s, opacity 0.15s;
+        }
+
+        .cat-delete-confirm:hover:not(:disabled) { background: #bb2d3b; }
+        .cat-delete-confirm:disabled { opacity: 0.65; cursor: not-allowed; }
+
+        /* Spinner */
+        .cat-spinner {
+          width: 14px;
+          height: 14px;
+          border: 2px solid rgba(255,255,255,0.35);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: cat-spin 0.7s linear infinite;
+          flex-shrink: 0;
+        }
+
+        @keyframes cat-spin { to { transform: rotate(360deg); } }
+
+        /* ===== CUSTOM DROPDOWN ===== */
+        .cat-dropdown-wrap { position: relative; }
+
+        .cat-dot-btn {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          transition: background 0.15s;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .cat-dot-btn:hover,
+        .cat-dot-btn.active { background: #e9ecef; }
+
+        .cat-dropdown-menu {
+          position: absolute;
+          right: 0;
+          top: calc(100% + 4px);
+          background: #fff;
+          border: 1px solid #dee2e6;
+          border-radius: 8px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+          z-index: 100;
+          min-width: 120px;
+          overflow: hidden;
+        }
+
+        .cat-dropdown-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+          padding: 10px 14px;
+          border: none;
+          background: transparent;
+          font-size: 14px;
+          color: #212529;
+          cursor: pointer;
+          text-align: left;
+          transition: background 0.12s;
+        }
+
+        .cat-dropdown-item:hover { background: #f8f9fa; }
+        .cat-dropdown-item.danger { color: #dc3545; }
+        .cat-dropdown-item.danger:hover { background: #fff5f5; }
+      `}</style>
+
+      {/* ===== Edit Modal — giống Profile ===== */}
       {editModal && (
-        <div style={overlayStyle} onClick={() => setEditModal(null)}>
-          <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
-            <h6
-              style={{
-                fontWeight: 600,
-                marginBottom: "16px",
-                color: "#212529",
-              }}
-            >
-              Chỉnh sửa danh mục
-            </h6>
-            <label
-              style={{
-                fontSize: "13px",
-                color: "#6c757d",
-                display: "block",
-                marginBottom: "6px",
-              }}
-            >
-              Tên danh mục
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleEdit()}
-              autoFocus
-            />
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "8px",
-                marginTop: "20px",
-              }}
-            >
+        <div className="cat-overlay" onClick={handleCloseEdit}>
+          <div className="cat-edit-modal" onClick={(e) => e.stopPropagation()}>
+            {/* Header: chỉ nút X */}
+            <div className="cat-edit-modal-header">
               <button
-                className="btn btn-light"
-                onClick={() => setEditModal(null)}
+                className="cat-edit-modal-close"
+                onClick={handleCloseEdit}
                 disabled={submitting}
-                style={{ fontSize: "inherit" }}
+                aria-label="Đóng"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* API error banner */}
+            {editApiError && (
+              <div
+                className="cat-alert-banner"
+                role="alert"
+                aria-live="assertive"
+              >
+                <span style={{ flexShrink: 0 }}>⚠</span>
+                <span>{editApiError}</span>
+              </div>
+            )}
+
+            {/* Field */}
+            <div className="cat-edit-field">
+              <label className="cat-edit-label">
+                Tên danh mục<span className="cat-required">*</span>
+              </label>
+              <input
+                type="text"
+                className={`cat-edit-input${editNameError ? " is-error" : ""}`}
+                value={editName}
+                onChange={handleEditNameChange}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && !submitting && handleEdit()
+                }
+                autoFocus
+                autoComplete="off"
+                aria-describedby={editNameError ? "cat-edit-error" : undefined}
+              />
+              {editNameError && (
+                <div
+                  id="cat-edit-error"
+                  className="cat-field-error"
+                  role="alert"
+                >
+                  {editNameError}
+                </div>
+              )}
+            </div>
+
+            {/* Buttons */}
+            <div className="cat-edit-actions">
+              <button
+                className="cat-btn-cancel-sm"
+                onClick={handleCloseEdit}
+                disabled={submitting}
               >
                 Hủy
               </button>
               <button
-                className="btn"
+                className="cat-btn-save"
                 onClick={handleEdit}
-                disabled={submitting || !editName.trim()}
-                style={{
-                  background: "#3d3a8c",
-                  color: "#fff",
-                  fontSize: "inherit",
-                }}
+                disabled={submitting}
               >
-                {submitting ? "Đang lưu..." : "Lưu"}
+                {submitting ? (
+                  <>
+                    <span className="cat-spinner" aria-hidden="true" />
+                    Đang lưu...
+                  </>
+                ) : (
+                  "Lưu"
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ===== Delete Modal ===== */}
+      {/* ===== Delete Modal — style như ảnh ===== */}
       {deleteModal && (
-        <div style={overlayStyle} onClick={() => setDeleteModal(null)}>
-          <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
-            <h6
-              style={{ fontWeight: 600, marginBottom: "8px", color: "#212529" }}
-            >
-              Xóa danh mục
-            </h6>
-            <p
-              style={{
-                fontSize: "14px",
-                color: "#6c757d",
-                marginBottom: "20px",
-              }}
-            >
-              Bạn có chắc muốn xóa danh mục{" "}
-              <strong style={{ color: "#212529" }}>"{deleteModal.name}"</strong>{" "}
-              không? Hành động này không thể hoàn tác.
-            </p>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "8px",
-              }}
-            >
+        <div
+          className="cat-overlay"
+          onClick={() => !submitting && setDeleteModal(null)}
+        >
+          <div
+            className="cat-delete-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="cat-delete-icon">
+              <IconWarning />
+            </div>
+            <h6 className="cat-delete-title">Bạn có chắc chắn xóa không?</h6>
+            <div className="cat-delete-desc">
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: 4,
+                  flexWrap: "wrap",
+                }}
+              >
+                <span>Danh mục</span>
+                <span
+                  className="cat-delete-name"
+                  title={deleteModal.name}
+                  style={{
+                    maxWidth: "100%",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    display: "inline-block",
+                  }}
+                >
+                  {deleteModal.name}
+                </span>
+                <span>sẽ bị xóa vĩnh viễn.</span>
+              </div>
+            </div>
+            <div className="cat-delete-actions">
               <button
-                className="btn btn-light"
+                className="cat-delete-cancel"
                 onClick={() => setDeleteModal(null)}
                 disabled={submitting}
-                style={{ fontSize: "inherit" }}
               >
                 Hủy
               </button>
               <button
-                className="btn btn-danger"
+                className="cat-delete-confirm"
                 onClick={handleDelete}
                 disabled={submitting}
-                style={{ fontSize: "inherit" }}
               >
-                {submitting ? "Đang xóa..." : "Xóa"}
+                {submitting ? (
+                  <>
+                    <span className="cat-spinner" aria-hidden="true" />
+                    Đang xóa...
+                  </>
+                ) : (
+                  "Xóa"
+                )}
               </button>
             </div>
           </div>
@@ -288,27 +650,24 @@ const Category = forwardRef((props, ref) => {
       )}
 
       {/* Search */}
-      <div
-        className="input-group"
-        style={{ maxWidth: 260, marginBottom: "1rem" }}
-      >
+      <div style={{ maxWidth: 260, marginBottom: "1rem" }}>
         <input
           type="text"
           className="form-control"
           placeholder="Tìm kiếm"
           value={search}
           onChange={handleSearchChange}
-          style={{ borderRadius: "8px", fontSize: 13.5, transition: "0.2s" }}
+          style={{ borderRadius: "8px", fontSize: 16, transition: "0.2s" }}
           onMouseEnter={(e) => {
-            e.target.style.borderColor = "#2563eb";
+            e.target.style.borderColor = "#3d3a8c";
           }}
           onMouseLeave={(e) => {
             if (document.activeElement !== e.target)
               e.target.style.borderColor = "";
           }}
           onFocus={(e) => {
-            e.target.style.borderColor = "#2563eb";
-            e.target.style.boxShadow = "0 0 0 3px rgba(37,99,235,.15)";
+            e.target.style.borderColor = "#3d3a8c";
+            e.target.style.boxShadow = "0 0 0 3px rgba(61,58,140,0.15)";
           }}
           onBlur={(e) => {
             e.target.style.borderColor = "";
@@ -327,11 +686,10 @@ const Category = forwardRef((props, ref) => {
               border: "3px solid #e9ecef",
               borderTop: "3px solid #3d3a8c",
               borderRadius: "50%",
-              animation: "spin 0.7s linear infinite",
+              animation: "cat-spin 0.7s linear infinite",
               margin: "0 auto",
             }}
           />
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       ) : categories.length === 0 ? (
         <div style={{ padding: "2rem", textAlign: "center", color: "#adb5bd" }}>
@@ -340,33 +698,19 @@ const Category = forwardRef((props, ref) => {
       ) : (
         <div>
           {categories.map((cat) => {
-            const isRowHovered = hoveredRow === cat.id;
-            const isDotHovered = hoveredDot === cat.id;
             const isOpen = openDropdown === cat.id;
-            const showTooltip = isDotHovered && !isOpen;
-            const showDotBg = isDotHovered || isOpen;
-
             return (
               <div
                 key={cat.id}
-                onMouseEnter={() => {
-                  if (!openDropdown || openDropdown === cat.id)
-                    setHoveredRow(cat.id);
-                }}
-                onMouseLeave={() => {
-                  if (!openDropdown || openDropdown === cat.id)
-                    setHoveredRow(null);
-                }}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   padding: "10px 12px",
                   marginBottom: "6px",
                   borderRadius: "10px",
-                  border:
-                    isRowHovered || isOpen
-                      ? "1.5px solid #5d51e7"
-                      : "1.5px solid #e9ecef",
+                  border: isOpen
+                    ? "1.5px solid #5d51e7"
+                    : "1.5px solid #e9ecef",
                   background: "#fff",
                   gap: "12px",
                   transition: "border-color 0.15s",
@@ -375,84 +719,57 @@ const Category = forwardRef((props, ref) => {
                 <div style={{ flexShrink: 0 }}>
                   <IconList />
                 </div>
-                <div style={{ flex: 1, fontSize: "inherit", color: "#212529" }}>
+                <div
+                  style={{
+                    flex: 1,
+                    fontSize: "inherit",
+                    color: "#212529",
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                    textOverflow: "ellipsis",
+                    minWidth: 0,
+                  }}
+                  title={cat.name}
+                >
                   {cat.name}
                 </div>
-                <div style={{ position: "relative", flexShrink: 0 }}>
-                  {showTooltip && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "-30px",
-                        right: "0",
-                        background: "#212529",
-                        color: "#fff",
-                        fontSize: "12px",
-                        fontWeight: 500,
-                        padding: "3px 8px",
-                        borderRadius: "5px",
-                        whiteSpace: "nowrap",
-                        pointerEvents: "none",
-                        zIndex: 10,
-                      }}
-                    >
-                      Action
+
+                {/* Custom dropdown */}
+                <div
+                  className="cat-dropdown-wrap"
+                  ref={(el) => {
+                    if (el) dropdownRefs.current[cat.id] = el;
+                  }}
+                >
+                  <button
+                    className={`cat-dot-btn${isOpen ? " active" : ""}`}
+                    onClick={(e) => toggleDropdown(cat.id, e)}
+                    aria-label="Tùy chọn"
+                  >
+                    <IconDots />
+                  </button>
+
+                  {isOpen && (
+                    <div className="cat-dropdown-menu">
+                      <button
+                        className="cat-dropdown-item"
+                        onClick={() => handleOpenEdit(cat)}
+                      >
+                        <i className="bi bi-pencil" style={{ fontSize: 14 }} />
+                        Chỉnh sửa
+                      </button>
+                      <button
+                        className="cat-dropdown-item danger"
+                        onClick={() => {
+                          setDeleteModal(cat);
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        <i className="bi bi-trash" style={{ fontSize: 14 }} />
+                        Xóa
+                      </button>
                     </div>
                   )}
-                  <div
-                    className="dropdown"
-                    ref={(el) => dropdownRef(el, cat.id)}
-                  >
-                    <button
-                      className="btn p-0"
-                      data-bs-toggle="dropdown"
-                      onMouseEnter={() => {
-                        if (!openDropdown || openDropdown === cat.id)
-                          setHoveredDot(cat.id);
-                      }}
-                      onMouseLeave={() => setHoveredDot(null)}
-                      style={{
-                        width: "32px",
-                        height: "32px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: "50%",
-                        background: showDotBg ? "#e9ecef" : "transparent",
-                        border: "none",
-                        transition: "background 0.15s",
-                      }}
-                    >
-                      <IconDots />
-                    </button>
-                    <ul
-                      className="dropdown-menu dropdown-menu-end"
-                      style={{
-                        minWidth: "60px",
-                        width: "60px",
-                        padding: "6px 0",
-                      }}
-                    >
-                      <li>
-                        <button
-                          className="dropdown-item"
-                          onClick={() => handleOpenEdit(cat)}
-                          style={{ padding: "10px 0", textAlign: "center" }}
-                        >
-                          <i className="bi bi-pencil"></i>
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          className="dropdown-item text-danger"
-                          onClick={() => setDeleteModal(cat)}
-                          style={{ padding: "10px 0", textAlign: "center" }}
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
                 </div>
               </div>
             );
@@ -481,7 +798,6 @@ const Category = forwardRef((props, ref) => {
               background: "#fff",
               color: page === 0 ? "#adb5bd" : "#212529",
               cursor: page === 0 ? "not-allowed" : "pointer",
-              fontSize: "inherit",
             }}
           >
             ‹
@@ -493,14 +809,12 @@ const Category = forwardRef((props, ref) => {
               onClick={() => setPage(p)}
               style={{
                 padding: "5px 10px",
-                border: "1px solid",
-                borderColor: page === p ? "#3d3a8c" : "#dee2e6",
+                border: `1px solid ${page === p ? "#3d3a8c" : "#dee2e6"}`,
                 borderRadius: "6px",
                 background: page === p ? "#3d3a8c" : "#fff",
                 color: page === p ? "#fff" : "#212529",
                 cursor: "pointer",
                 fontWeight: page === p ? 600 : 400,
-                fontSize: "inherit",
                 minWidth: "34px",
               }}
             >
@@ -518,7 +832,6 @@ const Category = forwardRef((props, ref) => {
               background: "#fff",
               color: page === meta.totalPages - 1 ? "#adb5bd" : "#212529",
               cursor: page === meta.totalPages - 1 ? "not-allowed" : "pointer",
-              fontSize: "inherit",
             }}
           >
             ›

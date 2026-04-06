@@ -5,9 +5,9 @@ import { useAuth } from "./AuthContext";
 const RootRedirect = () => {
   const { user, loading } = useAuth();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div></div>;
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/trang-chu" replace />;
 
   switch (user.role) {
     case "ADMIN":
