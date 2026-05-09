@@ -1,8 +1,9 @@
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const api = axios.create({
-  baseURL: "https://balance-enabled-desirable-broken.trycloudflare.com/api/v1",
-  timeout: 10000,
+  baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -96,10 +97,9 @@ api.interceptors.response.use(
     }
 
     try {
-      const res = await axios.post(
-        "http://localhost:8080/api/v1/auth/refresh-accessToken",
-        { refreshToken },
-      );
+      const res = await axios.post(`${API_URL}/auth/refresh-accessToken`, {
+        refreshToken,
+      });
 
       const { accessToken, refreshToken: newRefreshToken } = res.data.data;
       localStorage.setItem("access_token", accessToken);

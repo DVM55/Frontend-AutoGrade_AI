@@ -29,8 +29,11 @@ const fileIconClass = (contentType) => {
   return "bi-file-earmark text-secondary";
 };
 
-const isTextFile = (contentType) =>
-  contentType?.startsWith("text/") || contentType === "application/json";
+const isTextFile = (ct) => ct?.startsWith("text/") || ct === "application/json";
+const isImageFile = (ct) => ct?.startsWith("image/");
+const isVideoFile = (ct) => ct?.startsWith("video/");
+const isAudioFile = (ct) => ct?.startsWith("audio/");
+const isPdfFile = (ct) => ct?.includes("pdf");
 
 const formatDateTime = (dateStr) => {
   if (!dateStr) return "—";
@@ -42,8 +45,6 @@ const formatDateTime = (dateStr) => {
   });
   return `${date} ${time}`;
 };
-
-// ─── Download helper ──────────────────────────────────────────
 
 const triggerDownload = async (fileUrl, fileName) => {
   try {
@@ -62,12 +63,12 @@ const triggerDownload = async (fileUrl, fileName) => {
   }
 };
 
-// ─── Text Viewer Modal ────────────────────────────────────────
+// ─── Full-screen Document Viewer ──────────────────────────────
 
-const TextViewerModal = ({ file, onClose }) => {
+const DocumentViewer = ({ file, onClose }) => {
   const { fileUrl, fileName, contentType } = file;
-  const [content, setContent] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [textContent, setTextContent] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -86,67 +87,165 @@ const TextViewerModal = ({ file, onClose }) => {
   }, [onClose]);
 
   useEffect(() => {
-    fetch(fileUrl)
-      .then((r) => r.arrayBuffer())
-      .then((buf) => setContent(new TextDecoder("utf-8").decode(buf)))
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, [fileUrl]);
+    if (isTextFile(contentType)) {
+      setLoading(true);
+      fetch(fileUrl)
+        .then((r) => r.arrayBuffer())
+        .then((buf) => setTextContent(new TextDecoder("utf-8").decode(buf)))
+        .catch(() => setError(true))
+        .finally(() => setLoading(false));
+    }
+  }, [fileUrl, contentType]);
 
-  return createPortal(
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 99999,
-        background: "rgba(0,0,0,0.72)",
-        display: "flex",
-        flexDirection: "column",
-        animation: "tv-fadein 0.18s both",
-      }}
-    >
-      <style>{`@keyframes tv-fadein { from { opacity:0; } to { opacity:1; } }`}</style>
-
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "10px clamp(10px, 2vw, 18px)",
-          background: "#fff",
-          borderBottom: "1px solid #e5e7eb",
-          flexShrink: 0,
-          height: 52,
-          boxSizing: "border-box",
-          minWidth: 0,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            flex: 1,
-            minWidth: 0,
-            overflow: "hidden",
-          }}
-        >
-          <i
-            className={`bi ${fileIconClass(contentType)}`}
-            style={{ fontSize: 16, flexShrink: 0 }}
-          />
-          <span
-            title={fileName}
+  const renderBody = () => {
+    if (isImageFile(contentType)) {
+      return (
+        <div style={styles.viewerCenter}>
+          <img
+            src={fileUrl}
+            alt={fileName}
             style={{
-              fontWeight: 600,
-              fontSize: 16,
-              color: "#111827",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              maxWidth: "100%",
+              maxHeight: "100%",
+              objectFit: "contain",
+              borderRadius: 8,
+            }}
+          />
+        </div>
+      );
+    }
+    if (isVideoFile(contentType)) {
+      return (
+        <div style={styles.viewerCenter}>
+          <video
+            controls
+            autoPlay
+            src={fileUrl}
+            style={{ maxWidth: "100%", maxHeight: "100%", borderRadius: 8 }}
+          />
+        </div>
+      );
+    }
+    if (isAudioFile(contentType)) {
+      return (
+        <div style={styles.viewerCenter}>
+          <div style={{ textAlign: "center" }}>
+            <i
+              className={`bi ${fileIconClass(contentType)}`}
+              style={{
+                fontSize: 72,
+                marginBottom: 24,
+                display: "block",
+                color: "#f59e0b",
+              }}
+            />
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: 16,
+                color: "#111827",
+                marginBottom: 20,
+              }}
+            >
+              {fileName}
+            </div>
+            <audio
+              controls
+              autoPlay
+              src={fileUrl}
+              style={{ width: "100%", maxWidth: 480 }}
+            />
+          </div>
+        </div>
+      );
+    }
+    if (isPdfFile(contentType)) {
+      return (
+        <iframe
+          src={`${fileUrl}#toolbar=1`}
+          title={fileName}
+          style={{ flex: 1, width: "100%", border: "none" }}
+        />
+      );
+    }
+    if (isTextFile(contentType)) {
+      if (loading)
+        return (
+          <div style={styles.viewerCenter}>
+            <span className="spinner-border spinner-border-sm me-2" />
+            <span style={{ color: "#6b7280" }}>Đang tải nội dung…</span>
+          </div>
+        );
+      if (error)
+        return (
+          <div
+            style={{
+              ...styles.viewerCenter,
+              flexDirection: "column",
+              gap: 8,
+              color: "#ef4444",
             }}
           >
+            <i className="bi bi-exclamation-circle" style={{ fontSize: 32 }} />
+            <div>Không thể tải nội dung file.</div>
+          </div>
+        );
+      return <pre style={styles.textPre}>{textContent}</pre>;
+    }
+    // Unsupported — show open link
+    return (
+      <div
+        style={{
+          ...styles.viewerCenter,
+          flexDirection: "column",
+          gap: 16,
+          color: "#6b7280",
+        }}
+      >
+        <i
+          className={`bi ${fileIconClass(contentType)}`}
+          style={{ fontSize: 64 }}
+        />
+        <div style={{ fontWeight: 600, fontSize: 16, color: "#111827" }}>
+          {fileName}
+        </div>
+        <div style={{ fontSize: 14 }}>Không thể xem trước loại file này.</div>
+        <a
+          href={fileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "9px 20px",
+            borderRadius: 9,
+            background: "#1a73e8",
+            color: "#fff",
+            fontWeight: 600,
+            fontSize: 15,
+            textDecoration: "none",
+          }}
+        >
+          <i className="bi bi-box-arrow-up-right" />
+          Mở file
+        </a>
+      </div>
+    );
+  };
+
+  return createPortal(
+    <div style={styles.viewerRoot}>
+      <style>{`@keyframes dv-fadein { from { opacity:0; } to { opacity:1; } }`}</style>
+
+      {/* Header */}
+      <div style={styles.viewerHeader}>
+        <div style={styles.viewerHeaderLeft}>
+          <i
+            className={`bi ${fileIconClass(contentType)}`}
+            style={{ fontSize: 18, flexShrink: 0 }}
+          />
+          <span title={fileName} style={styles.viewerTitle}>
             {fileName}
           </span>
         </div>
@@ -158,313 +257,224 @@ const TextViewerModal = ({ file, onClose }) => {
             flexShrink: 0,
           }}
         >
-          <a
-            href={fileUrl}
-            download={fileName}
-            className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+          <button
+            onClick={() => triggerDownload(fileUrl, fileName)}
+            style={styles.viewerBtn}
             title="Tải xuống"
           >
             <i className="bi bi-download" />
-            <span className="d-none d-sm-inline">Tải xuống</span>
-          </a>
-          <button className="btn-close ms-1" onClick={onClose} />
+            <span className="d-none d-sm-inline" style={{ fontSize: 14 }}>
+              Tải xuống
+            </span>
+          </button>
+          <button
+            onClick={onClose}
+            className="btn-close"
+            style={{ flexShrink: 0 }}
+          />
         </div>
       </div>
 
       {/* Body */}
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        {loading && (
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#6b7280",
-              background: "#f9fafb",
-            }}
-          >
-            <span className="spinner-border spinner-border-sm me-2" />
-            Đang tải nội dung…
-          </div>
-        )}
-        {error && (
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ef4444",
-              background: "#f9fafb",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            <i className="bi bi-exclamation-circle" style={{ fontSize: 32 }} />
-            <div>Không thể tải nội dung file.</div>
-          </div>
-        )}
-        {!loading && !error && (
-          <pre
-            style={{
-              flex: 1,
-              minHeight: 0,
-              overflowY: "auto",
-              background: "#f8f9fa",
-              margin: 0,
-              padding: "16px clamp(12px, 3vw, 24px)",
-              fontSize: 16,
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-              lineHeight: 1.7,
-              color: "#111827",
-            }}
-          >
-            {content}
-          </pre>
-        )}
-      </div>
+      <div style={styles.viewerBody}>{renderBody()}</div>
     </div>,
     document.body,
   );
 };
 
-// ─── File Action Modal ────────────────────────────────────────
-// Hiển thị khi click vào file — cung cấp: Mở / Xem nội dung / Tải xuống
-// + nút Chỉnh sửa & Xóa (chỉ dành cho admin)
+const styles = {
+  viewerRoot: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 99999,
+    background: "#f3f4f6",
+    display: "flex",
+    flexDirection: "column",
+    animation: "dv-fadein 0.2s both",
+  },
+  viewerHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    padding: "10px 16px",
+    background: "#fff",
+    borderBottom: "1px solid #e5e7eb",
+    flexShrink: 0,
+    height: 54,
+    boxSizing: "border-box",
+  },
+  viewerHeaderLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: 9,
+    flex: 1,
+    minWidth: 0,
+    overflow: "hidden",
+  },
+  viewerTitle: {
+    fontWeight: 600,
+    fontSize: 15,
+    color: "#111827",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  viewerBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "6px 14px",
+    borderRadius: 8,
+    border: "1.5px solid #d1d5db",
+    background: "#fff",
+    color: "#374151",
+    fontWeight: 500,
+    fontSize: 14,
+    cursor: "pointer",
+  },
+  viewerBody: {
+    flex: 1,
+    minHeight: 0,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  },
+  viewerCenter: {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    overflow: "auto",
+  },
+  textPre: {
+    flex: 1,
+    minHeight: 0,
+    overflowY: "auto",
+    background: "#f8f9fa",
+    margin: 0,
+    padding: "16px clamp(12px, 3vw, 28px)",
+    fontSize: 15,
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+    lineHeight: 1.75,
+    color: "#111827",
+  },
+};
 
-const FileActionModal = ({ file, onClose, onViewText, onRename, onDelete }) => {
-  const { contentType, fileUrl, fileName } = file;
+// ─── 3-Dot Dropdown Menu ──────────────────────────────────────
+
+const FileMenu = ({ file, onRename, onDelete }) => {
+  const [open, setOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
+    if (!open) return;
+    const handler = (e) => {
+      if (
+        !menuRef.current?.contains(e.target) &&
+        !btnRef.current?.contains(e.target)
+      ) {
+        setOpen(false);
+      }
     };
-  }, []);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
 
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onClose]);
+  const handleOpen = (e) => {
+    e.stopPropagation();
+    if (!open) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.right + window.scrollX,
+      });
+    }
+    setOpen((v) => !v);
+  };
 
-  return createPortal(
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 99999,
-        background: "rgba(0,0,0,0.55)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-        animation: "fam-fadein 0.18s both",
-      }}
-    >
-      <style>{`@keyframes fam-fadein { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }`}</style>
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "#fff",
-          borderRadius: 16,
-          boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
-          padding: "28px 24px 24px",
-          width: "100%",
-          maxWidth: 400,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 12,
-          textAlign: "center",
-        }}
+  return (
+    <div onClick={(e) => e.stopPropagation()}>
+      <button
+        ref={btnRef}
+        className="du-menu-btn"
+        onClick={handleOpen}
+        title="Tùy chọn"
       >
+        <i className="bi bi-three-dots-vertical" />
+      </button>
+
+      {open &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="du-dropdown"
+            style={{
+              position: "absolute",
+              top: dropdownPos.top,
+              right: `calc(100vw - ${dropdownPos.left}px + 12px)`,
+              left: "auto",
+              transform: "none",
+            }}
+          >
+            <button
+              className="du-dropdown-item"
+              onClick={() => {
+                setOpen(false);
+                onRename(file);
+              }}
+            >
+              <i className="bi bi-pencil-square" style={{ color: "#1a73e8" }} />
+              Chỉnh sửa
+            </button>
+            <div className="du-dropdown-divider" />
+            <button
+              className="du-dropdown-item du-dropdown-item--danger"
+              onClick={() => {
+                setOpen(false);
+                onDelete(file);
+              }}
+            >
+              <i className="bi bi-trash3" />
+              Xóa
+            </button>
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+};
+
+// ─── File Row ─────────────────────────────────────────────────
+
+const FileRow = ({ file, onFileClick, onRename, onDelete }) => (
+  <tr onClick={() => onFileClick(file)} className="du-row">
+    <td>
+      <div className="du-file-name">
         <i
-          className={`bi ${fileIconClass(contentType)}`}
-          style={{ fontSize: 48 }}
+          className={`bi ${fileIconClass(file.contentType)}`}
+          style={{ fontSize: 17, flexShrink: 0 }}
         />
-        <div
-          title={fileName}
-          style={{
-            fontWeight: 600,
-            fontSize: 15,
-            color: "#111827",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            width: "100%",
-          }}
-        >
-          {fileName}
-        </div>
-
-        {/* Hành động chính: Mở / Xem nội dung + Tải xuống */}
-        <div style={{ display: "flex", gap: 10, width: "100%", marginTop: 4 }}>
-          {isTextFile(contentType) ? (
-            <button
-              onClick={() => {
-                onClose();
-                onViewText(file);
-              }}
-              style={btnPrimary}
-            >
-              <i className="bi bi-eye" style={{ fontSize: 16 }} />
-              Xem nội dung
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                window.open(fileUrl, "_blank", "noopener,noreferrer");
-                onClose();
-              }}
-              style={btnPrimary}
-            >
-              <i
-                className="bi bi-box-arrow-up-right"
-                style={{ fontSize: 16 }}
-              />
-              Mở file
-            </button>
-          )}
-
-          <button
-            onClick={() => {
-              triggerDownload(fileUrl, fileName);
-              onClose();
-            }}
-            style={btnSecondary}
-          >
-            <i className="bi bi-download" style={{ fontSize: 16 }} />
-            Tải xuống
-          </button>
-        </div>
-
-        {/* Divider */}
-        <div style={{ width: "100%", height: 1, background: "#f0f0f0" }} />
-
-        {/* Admin actions: Chỉnh sửa & Xóa */}
-        <div style={{ display: "flex", gap: 10, width: "100%" }}>
-          <button
-            onClick={() => {
-              onClose();
-              onRename(file);
-            }}
-            style={btnOutlineBlue}
-          >
-            <i className="bi bi-pencil-square" style={{ fontSize: 16 }} />
-            Chỉnh sửa
-          </button>
-          <button
-            onClick={() => {
-              onClose();
-              onDelete(file);
-            }}
-            style={btnOutlineRed}
-          >
-            <i className="bi bi-trash3" style={{ fontSize: 16 }} />
-            Xóa
-          </button>
-        </div>
-
-        <button
-          onClick={onClose}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#9ca3af",
-            fontSize: 16,
-            cursor: "pointer",
-            padding: "4px 8px",
-          }}
-        >
-          Đóng
-        </button>
+        <span className="du-file-link" title={file.fileName}>
+          {file.fileName}
+        </span>
       </div>
-    </div>,
-    document.body,
-  );
-};
-
-// Button style constants
-const btnPrimary = {
-  flex: 1,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 7,
-  padding: "10px 0",
-  borderRadius: 9,
-  background: "#1a73e8",
-  color: "#fff",
-  fontWeight: 600,
-  fontSize: 16,
-  border: "none",
-  cursor: "pointer",
-};
-const btnSecondary = {
-  flex: 1,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 7,
-  padding: "10px 0",
-  borderRadius: 9,
-  background: "#fff",
-  color: "#374151",
-  fontWeight: 600,
-  fontSize: 16,
-  border: "1.5px solid #d1d5db",
-  cursor: "pointer",
-};
-const btnOutlineBlue = {
-  flex: 1,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 7,
-  padding: "9px 0",
-  borderRadius: 9,
-  background: "#e8f0fe",
-  color: "#1a73e8",
-  fontWeight: 600,
-  fontSize: 16,
-  border: "none",
-  cursor: "pointer",
-};
-const btnOutlineRed = {
-  flex: 1,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 7,
-  padding: "9px 0",
-  borderRadius: 9,
-  background: "#fff3f3",
-  color: "#ef4444",
-  fontWeight: 600,
-  fontSize: 16,
-  border: "none",
-  cursor: "pointer",
-};
+    </td>
+    <td className="du-date">{formatDateTime(file.updatedAt)}</td>
+    <td className="du-actions-cell" onClick={(e) => e.stopPropagation()}>
+      <FileMenu file={file} onRename={onRename} onDelete={onDelete} />
+    </td>
+  </tr>
+);
 
 // ─── Upload Modal ─────────────────────────────────────────────
 
 const UploadModal = ({ classId, onClose, onSuccess }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [uploadProgress, setUploadProgress] = useState({});
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef(null);
@@ -499,13 +509,6 @@ const UploadModal = ({ classId, onClose, onSuccess }) => {
               const xhr = new XMLHttpRequest();
               xhr.open("PUT", item.uploadUrl);
               xhr.setRequestHeader("Content-Type", item.contentType);
-              xhr.upload.onprogress = (e) => {
-                if (e.lengthComputable)
-                  setUploadProgress((p) => ({
-                    ...p,
-                    [index]: Math.round((e.loaded * 100) / e.total),
-                  }));
-              };
               xhr.onload = () =>
                 xhr.status === 200 || xhr.status === 204 ? resolve() : reject();
               xhr.onerror = reject;
@@ -550,7 +553,6 @@ const UploadModal = ({ classId, onClose, onSuccess }) => {
           width: "100%",
           maxWidth: 480,
           boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
-          boxSizing: "border-box",
           overflow: "hidden",
         }}
       >
@@ -606,13 +608,13 @@ const UploadModal = ({ classId, onClose, onSuccess }) => {
               style={{
                 fontWeight: 600,
                 margin: "0 0 4px",
-                fontSize: 16,
+                fontSize: 15,
                 color: "#111827",
               }}
             >
               Kéo &amp; thả tệp vào đây
             </p>
-            <p style={{ fontSize: 16, color: "#9ca3af", margin: 0 }}>
+            <p style={{ fontSize: 14, color: "#9ca3af", margin: 0 }}>
               hoặc click để chọn từ máy tính
             </p>
             <input
@@ -651,20 +653,18 @@ const UploadModal = ({ classId, onClose, onSuccess }) => {
                       className={`bi ${fileIconClass(file.type)}`}
                       style={{ fontSize: 16, flexShrink: 0 }}
                     />
-                    <div style={{ overflow: "hidden" }}>
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          fontSize: 16,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          maxWidth: 280,
-                          color: "#111827",
-                        }}
-                      >
-                        {file.name}
-                      </div>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 14,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        maxWidth: 280,
+                        color: "#111827",
+                      }}
+                    >
+                      {file.name}
                     </div>
                   </div>
                   {!loading && (
@@ -705,7 +705,7 @@ const UploadModal = ({ classId, onClose, onSuccess }) => {
               borderRadius: 10,
               border: "1.5px solid #e5e7eb",
               background: "#fff",
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: 500,
               color: "#444",
               cursor: "pointer",
@@ -722,7 +722,7 @@ const UploadModal = ({ classId, onClose, onSuccess }) => {
               border: "none",
               background: "#1a73e8",
               color: "#fff",
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: 600,
               cursor: loading ? "not-allowed" : "pointer",
               display: "flex",
@@ -792,12 +792,6 @@ const RenameModal = ({ file, onClose, onSuccess }) => {
     }
   };
 
-  const handleChange = (e) => {
-    setName(e.target.value);
-    if (nameError) setNameError("");
-    if (apiError) setApiError("");
-  };
-
   return createPortal(
     <div
       className="cd-backdrop"
@@ -822,7 +816,6 @@ const RenameModal = ({ file, onClose, onSuccess }) => {
           padding: "20px 16px",
         }}
       >
-        {/* Close button */}
         <div
           style={{
             display: "flex",
@@ -846,8 +839,6 @@ const RenameModal = ({ file, onClose, onSuccess }) => {
             ×
           </button>
         </div>
-
-        {/* API error banner */}
         {apiError && (
           <div
             style={{
@@ -856,7 +847,7 @@ const RenameModal = ({ file, onClose, onSuccess }) => {
               gap: 8,
               padding: "10px 14px",
               borderRadius: 8,
-              fontSize: 16,
+              fontSize: 14,
               lineHeight: 1.5,
               marginBottom: 12,
               background: "#fff5f5",
@@ -868,8 +859,6 @@ const RenameModal = ({ file, onClose, onSuccess }) => {
             <span>{apiError}</span>
           </div>
         )}
-
-        {/* Field */}
         <div style={{ marginBottom: 16 }}>
           <label
             style={{
@@ -888,30 +877,19 @@ const RenameModal = ({ file, onClose, onSuccess }) => {
               alignItems: "center",
               borderRadius: 8,
               border: `1px solid ${nameError ? "#dc3545" : "#ddd"}`,
-              boxShadow: nameError ? "0 0 0 2px rgba(220,53,69,0.12)" : "none",
-              transition: "border-color 0.2s, box-shadow 0.2s",
               background: "#fff",
               overflow: "hidden",
-            }}
-            onFocusCapture={(e) => {
-              if (!nameError) {
-                e.currentTarget.style.borderColor = "#1a73e8";
-                e.currentTarget.style.boxShadow =
-                  "0 0 0 3px rgba(26,115,232,0.12)";
-              }
-            }}
-            onBlurCapture={(e) => {
-              if (!nameError) {
-                e.currentTarget.style.borderColor = "#ddd";
-                e.currentTarget.style.boxShadow = "none";
-              }
             }}
           >
             <input
               autoFocus
               type="text"
               value={name}
-              onChange={handleChange}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (nameError) setNameError("");
+                if (apiError) setApiError("");
+              }}
               onKeyDown={(e) => e.key === "Enter" && !loading && handleSave()}
               autoComplete="off"
               style={{
@@ -919,7 +897,7 @@ const RenameModal = ({ file, onClose, onSuccess }) => {
                 padding: "10px 12px",
                 border: "none",
                 outline: "none",
-                fontSize: 16,
+                fontSize: 15,
                 background: "transparent",
                 color: "#212529",
                 minWidth: 0,
@@ -929,7 +907,7 @@ const RenameModal = ({ file, onClose, onSuccess }) => {
               <span
                 style={{
                   padding: "10px 12px 10px 0",
-                  fontSize: 16,
+                  fontSize: 15,
                   color: "#6b7280",
                   whiteSpace: "nowrap",
                   userSelect: "none",
@@ -940,20 +918,11 @@ const RenameModal = ({ file, onClose, onSuccess }) => {
             )}
           </div>
           {nameError && (
-            <div
-              style={{
-                fontSize: 16,
-                color: "#dc3545",
-                marginTop: 4,
-                lineHeight: 1.4,
-              }}
-            >
+            <div style={{ fontSize: 13, color: "#dc3545", marginTop: 4 }}>
               {nameError}
             </div>
           )}
         </div>
-
-        {/* Actions */}
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button
             onClick={onClose}
@@ -964,7 +933,7 @@ const RenameModal = ({ file, onClose, onSuccess }) => {
               border: "1px solid #ddd",
               background: "#fff",
               cursor: "pointer",
-              fontSize: 16,
+              fontSize: 14,
               color: "#444",
             }}
           >
@@ -980,7 +949,7 @@ const RenameModal = ({ file, onClose, onSuccess }) => {
               background: "#1a73e8",
               color: "#fff",
               cursor: loading ? "not-allowed" : "pointer",
-              fontSize: 16,
+              fontSize: 14,
               display: "flex",
               alignItems: "center",
               gap: 6,
@@ -1076,25 +1045,6 @@ const DeleteModal = ({ file, onClose, onSuccess }) => {
   );
 };
 
-// ─── File Row ─────────────────────────────────────────────────
-
-const FileRow = ({ file, onFileClick }) => (
-  <tr onClick={() => onFileClick(file)}>
-    <td>
-      <div className="du-file-name">
-        <i
-          className={`bi ${fileIconClass(file.contentType)}`}
-          style={{ fontSize: 16, flexShrink: 0 }}
-        />
-        <span className="du-file-link" title={file.fileName}>
-          {file.fileName}
-        </span>
-      </div>
-    </td>
-    <td className="du-date">{formatDateTime(file.updatedAt)}</td>
-  </tr>
-);
-
 // ─── Main Component ───────────────────────────────────────────
 
 const Document = ({ classId }) => {
@@ -1106,8 +1056,7 @@ const Document = ({ classId }) => {
   const [totalElements, setTotalElements] = useState(0);
 
   const [showUpload, setShowUpload] = useState(false);
-  const [actionFile, setActionFile] = useState(null); // FileActionModal
-  const [textViewFile, setTextViewFile] = useState(null); // TextViewerModal
+  const [viewerFile, setViewerFile] = useState(null);
   const [renameFile, setRenameFile] = useState(null);
   const [deleteFile, setDeleteFile] = useState(null);
 
@@ -1167,6 +1116,7 @@ const Document = ({ classId }) => {
               <tr>
                 <th>Tên tệp</th>
                 <th className="du-th-date">Cập nhật lúc</th>
+                <th className="du-th-actions" />
               </tr>
             </thead>
             <tbody>
@@ -1174,7 +1124,9 @@ const Document = ({ classId }) => {
                 <FileRow
                   key={file.id}
                   file={file}
-                  onFileClick={setActionFile}
+                  onFileClick={setViewerFile}
+                  onRename={setRenameFile}
+                  onDelete={setDeleteFile}
                 />
               ))}
             </tbody>
@@ -1210,7 +1162,6 @@ const Document = ({ classId }) => {
         </div>
       )}
 
-      {/* Modals */}
       {showUpload && (
         <UploadModal
           classId={classId}
@@ -1218,20 +1169,8 @@ const Document = ({ classId }) => {
           onSuccess={() => fetchFiles(0)}
         />
       )}
-      {actionFile && (
-        <FileActionModal
-          file={actionFile}
-          onClose={() => setActionFile(null)}
-          onViewText={(file) => setTextViewFile(file)}
-          onRename={(file) => setRenameFile(file)}
-          onDelete={(file) => setDeleteFile(file)}
-        />
-      )}
-      {textViewFile && (
-        <TextViewerModal
-          file={textViewFile}
-          onClose={() => setTextViewFile(null)}
-        />
+      {viewerFile && (
+        <DocumentViewer file={viewerFile} onClose={() => setViewerFile(null)} />
       )}
       {renameFile && (
         <RenameModal
@@ -1252,12 +1191,12 @@ const Document = ({ classId }) => {
 };
 
 const docStyle = `
-  .cm-result-count { font-size: 15px; color: #6b7280; margin-bottom: 10px; }
+  .cm-result-count { font-size: 16px; color: #6b7280; margin-bottom: 10px; }
 
   .doc-upload-btn {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 8px 16px; border-radius: 8px; border: none;
-    background: #1a73e8; color: #fff; font-size: 15px; font-weight: 600;
+    background: #1a73e8; color: #fff; font-size: 16px; font-weight: 600;
     cursor: pointer; transition: background 0.15s;
   }
   .doc-upload-btn:hover { background: #1558b0; }
@@ -1269,21 +1208,53 @@ const docStyle = `
   .du-table-wrap { border-radius: 12px; overflow: hidden; border: 1.5px solid #e5e7eb; background: #fff; }
   .du-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .du-table thead tr { background: #f9fafb; }
-  .du-table th { padding: 11px 16px; font-size: 15px; font-weight: 600; color: #6b7280; text-align: left; border-bottom: 1.5px solid #e5e7eb; white-space: nowrap; }
-  .du-th-date { width: 150px; }
-  .du-table tbody tr { cursor: pointer; transition: background 0.13s; border-bottom: 1px solid #f3f4f6; }
-  .du-table tbody tr:last-child { border-bottom: none; }
-  .du-table tbody tr:hover { background: #f0f7ff; }
+  .du-table th { padding: 11px 16px; font-size: 16px; font-weight: 600; color: #6b7280; text-align: left; border-bottom: 1.5px solid #e5e7eb; white-space: nowrap; }
+  .du-th-date { width: 160px; }
+  .du-th-actions { width: 48px; }
+  .du-table tbody tr.du-row { cursor: pointer; transition: background 0.13s; border-bottom: 1px solid #f3f4f6; }
+  .du-table tbody tr.du-row:last-child { border-bottom: none; }
+  .du-table tbody tr.du-row:hover { background: #f0f7ff; }
   .du-table td { padding: 11px 16px; vertical-align: middle; overflow: hidden; }
   .du-file-name { display: flex; align-items: center; gap: 9px; min-width: 0; overflow: hidden; }
-  .du-file-link { font-size: 15px; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
-  .du-date { font-size: 14px; color: #9ca3af; white-space: nowrap; }
+  .du-file-link { font-size: 16px; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+  .du-date { font-size: 16px; color: #9ca3af; white-space: nowrap; }
+  .du-actions-cell { width: 48px; padding: 6px 8px 6px 0 !important; text-align: right; }
 
   @media (max-width: 480px) { .du-th-date, .du-date { display: none; } }
 
+  /* ── 3-dot menu ── */
+  .du-menu-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 7px;
+    border: none; background: transparent;
+    color: #9ca3af; font-size: 18px; cursor: pointer;
+    transition: background 0.13s, color 0.13s;
+  }
+  .du-menu-btn:hover { background: #e5e7eb; color: #374151; }
+
+  .du-dropdown {
+    background: #fff; border: 1.5px solid #e5e7eb; border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    min-width: 160px; z-index: 9999; overflow: hidden;
+    animation: dd-pop 0.14s both; position: absolute;
+  }
+  @keyframes dd-pop { from { opacity:0; transform:translateY(-6px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+
+  .du-dropdown-item {
+    display: flex; align-items: center; gap: 9px;
+    width: 100%; padding: 11px 16px;
+    border: none; background: transparent;
+    font-size: 16px; font-weight: 500; color: #374151;
+    cursor: pointer; text-align: left; transition: background 0.12s;
+  }
+  .du-dropdown-item:hover { background: #f3f4f6; }
+  .du-dropdown-item--danger { color: #ef4444; }
+  .du-dropdown-item--danger:hover { background: #fff5f5; }
+  .du-dropdown-divider { height: 1px; background: #f3f4f6; margin: 2px 0; }
+
   /* ── Pagination ── */
   .cm-pagination { display: flex; justify-content: center; align-items: center; gap: 4px; margin-top: 16px; flex-wrap: wrap; }
-  .cm-page-btn { min-width: 34px; height: 34px; padding: 0 8px; border: 1.5px solid #e5e7eb; border-radius: 7px; background: #fff; color: #1a1a2e; font-size: 15px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+  .cm-page-btn { min-width: 36px; height: 36px; padding: 0 8px; border: 1.5px solid #e5e7eb; border-radius: 7px; background: #fff; color: #1a1a2e; font-size: 16px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
   .cm-page-btn:hover:not(:disabled) { border-color: #1a73e8; color: #1a73e8; }
   .cm-page-btn--active { background: #1a73e8; color: #fff; border-color: #1a73e8; font-weight: 600; }
   .cm-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -1294,15 +1265,13 @@ const docStyle = `
   .cd-modal--confirm { background: #fff; border-radius: 16px; width: 100%; max-width: 340px; box-sizing: border-box; padding: 32px 24px 24px; text-align: center; animation: cu-fadeup 0.25s both; }
   .cm-del-icon { margin-bottom: 16px; }
   .cm-del-title { font-size: 16px; font-weight: 700; color: #212529; margin: 0 0 10px; line-height: 1.3; }
-  .cm-del-desc { font-size: 15px; color: #6b7280; margin: 0 0 24px; line-height: 1.6; word-break: keep-all; overflow-wrap: break-word; }
+  .cm-del-desc { font-size: 16px; color: #6b7280; margin: 0 0 24px; line-height: 1.6; word-break: keep-all; overflow-wrap: break-word; }
   .cm-del-actions { display: flex; gap: 10px; }
-  .cm-del-cancel { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #dee2e6; background: #fff; font-size: 15px; font-weight: 500; color: #444; cursor: pointer; transition: background 0.15s; }
+  .cm-del-cancel { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #dee2e6; background: #fff; font-size: 16px; font-weight: 500; color: #444; cursor: pointer; transition: background 0.15s; }
   .cm-del-cancel:hover { background: #f0f0f0; }
   .cm-del-cancel:disabled { opacity: 0.6; cursor: not-allowed; }
-  .cm-del-confirm { flex: 1; padding: 10px; border-radius: 10px; border: none; background: #dc3545; color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s, opacity 0.15s; }
+  .cm-del-confirm { flex: 1; padding: 10px; border-radius: 10px; border: none; background: #dc3545; color: #fff; font-size: 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s, opacity 0.15s; }
   .cm-del-confirm:hover:not(:disabled) { background: #bb2d3b; }
-  .cm-del-confirm--blue { background: #1a73e8; }
-  .cm-del-confirm--blue:hover:not(:disabled) { background: #1558b0; }
   .cm-del-confirm:disabled { opacity: 0.65; cursor: not-allowed; }
   .cm-btn-spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: cu-spin 0.7s linear infinite; display: inline-block; flex-shrink: 0; }
 

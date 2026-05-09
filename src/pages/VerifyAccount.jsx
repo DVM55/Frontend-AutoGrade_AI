@@ -170,7 +170,7 @@ const VerifyAccount = () => {
         }
 
         .verify-subtitle {
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           text-align: center;
           color: #6c757d;
           margin-bottom: 1.5rem;
@@ -192,7 +192,7 @@ const VerifyAccount = () => {
           gap: 0.5rem;
           padding: 0.65rem 0.85rem;
           border-radius: 8px;
-          font-size: clamp(0.78rem, 2.8vw, 0.85rem);
+          font-size: 14px;
           line-height: 1.5;
           margin-bottom: 1rem;
           word-break: break-word;
@@ -224,7 +224,7 @@ const VerifyAccount = () => {
         .otp-input {
           width: clamp(40px, 12vw, 55px);
           height: clamp(44px, 13vw, 58px);
-          font-size: clamp(1.2rem, 5vw, 1.6rem);
+          font-size: clamp(1.2rem, 5vw, 1.5rem);
           font-weight: 700;
           text-align: center;
           border: 1px solid #dee2e6;
@@ -253,7 +253,7 @@ const VerifyAccount = () => {
 
         /* field-level error sits below inputs */
         .field-error {
-          font-size: 0.78rem;
+          font-size: 14px;
           color: #dc3545;
           text-align: center;
           min-height: 1.1em;
@@ -264,7 +264,7 @@ const VerifyAccount = () => {
         .btn-verify {
           width: 100%;
           padding: 0.7rem 1rem;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           font-weight: 600;
           border-radius: 10px;
           background-color: #0d6efd;
@@ -281,7 +281,7 @@ const VerifyAccount = () => {
         /* ── Resend row ── */
         .resend-row {
           text-align: center;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           margin-bottom: 0.75rem;
           color: #6c757d;
         }
@@ -300,7 +300,7 @@ const VerifyAccount = () => {
         .back-link {
           display: block;
           text-align: center;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           color: #0d6efd;
           cursor: pointer;
           transition: opacity 0.2s;

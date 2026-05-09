@@ -7,7 +7,7 @@ const SideBar = ({ collapsed, onToggle }) => {
     {
       icon: "bi-file-earmark-text",
       label: "Bài kiểm tra",
-      path: "/teacher/exams",
+      path: "/teacher/quizzes",
     },
     {
       icon: "bi-patch-question",

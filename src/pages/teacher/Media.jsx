@@ -1018,7 +1018,7 @@ export default function Media({ show, onClose, onSelect }) {
                       ? "2.5px solid #2563eb"
                       : "2.5px solid transparent",
                     marginBottom: -1,
-                    fontSize: 16.5,
+                    fontSize: 16,
                     transition: "color 0.15s",
                   }}
                 >

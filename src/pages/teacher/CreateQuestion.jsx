@@ -4,6 +4,7 @@ import GroupSearch from "../../component/GroupSearch";
 import {
   createQuestions,
   importQuestions,
+  generateQuestionFromAI,
 } from "../../service/question.service";
 import Media from "./Media";
 import { toast } from "react-toastify";
@@ -570,6 +571,694 @@ const ImportedQuestionCard = ({ question, index, onRemove }) => {
               ))}
         </div>
       )}
+    </div>
+  );
+};
+
+// ─── AiQuestionModal ─────────────────────────────────────────────────────────
+const AI_QUESTION_TYPES = [
+  { value: "SINGLE_CHOICE", label: "Chọn 1 đáp án" },
+  { value: "MULTIPLE_CHOICE", label: "Chọn nhiều đáp án" },
+  { value: "SHORT_ANSWER", label: "Trả lời ngắn" },
+];
+
+const AiQuestionModal = ({ onClose, onSuccess }) => {
+  const [tab, setTab] = useState("prompt");
+  const [questionType, setQuestionType] = useState("SINGLE_CHOICE");
+  const [quantity, setQuantity] = useState(5);
+  const [requirement, setRequirement] = useState("");
+  const [docRequirement, setDocRequirement] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
+  const requirementRef = useRef(null);
+  const docRequirementRef = useRef(null);
+
+  const ACCEPTED_DOC = [
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/msword",
+    "application/pdf",
+    "text/plain",
+  ];
+
+  const handleFile = (file) => {
+    if (!file) return;
+    if (!ACCEPTED_DOC.includes(file.type)) {
+      toast.error("Chỉ hỗ trợ file PDF, Word hoặc TXT!");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File không được vượt quá 10MB!");
+      return;
+    }
+    setSelectedFile(file);
+  };
+
+  const handleGenerate = async () => {
+    if (tab === "prompt" && !requirement.trim()) {
+      toast.error("Vui lòng nhập nội dung hoặc yêu cầu!");
+      return;
+    }
+    if (tab === "document" && !selectedFile) {
+      toast.error("Vui lòng chọn file tài liệu!");
+      return;
+    }
+    if (!quantity || Number(quantity) < 1) {
+      toast.error("Số câu hỏi phải lớn hơn 0!");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await generateQuestionFromAI({
+        file: tab === "document" ? selectedFile : null,
+        quantity: Number(quantity),
+        requirement:
+          tab === "prompt" ? requirement.trim() : docRequirement.trim() || null,
+        questionType,
+      });
+      onSuccess(res.data);
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Tạo câu hỏi thất bại!",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fileExt = selectedFile?.name?.split(".").pop()?.toLowerCase();
+  const isPdf = fileExt === "pdf";
+  const isWord = ["doc", "docx"].includes(fileExt);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1180,
+        background: "rgba(15,23,42,0.55)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <style>{`
+        @media (max-width: 480px) {
+          .ai-modal-wrap { border-radius: 12px !important; }
+          .ai-modal-header { padding: 11px 13px !important; }
+          .ai-modal-inner { padding: 14px 13px !important; gap: 12px !important; }
+          .ai-modal-footer { padding: 10px 13px !important; }
+          .ai-modal-row1 { flex-direction: column !important; align-items: stretch !important; gap: 8px !important; }
+          .ai-tab-pills { width: 100% !important; }
+          .ai-modal-qty { flex-direction: row !important; justify-content: space-between !important; align-items: center !important; background: #f8f7ff; border-radius: 8px; padding: 8px 10px; border: 1.5px solid #ede9fe; }
+          .ai-type-pills { gap: 4px !important; }
+          .ai-type-pill { padding: 5px 10px !important;  }
+        }
+      `}</style>
+
+      <div
+        className="ai-modal-wrap"
+        style={{
+          width: "100%",
+          maxWidth: 520,
+          maxHeight: "calc(100vh - 32px)",
+          background: "#fff",
+          borderRadius: 18,
+          boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+          animation: "fadeInScale 0.24s cubic-bezier(.4,0,.2,1)",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        {/* ── Header ── */}
+        <div
+          className="ai-modal-header"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "14px 20px",
+            borderBottom: "1.5px solid #ede9fe",
+            background: "#f8f7ff",
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                background: "#d1fae5",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#059669"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#065f46" }}>
+              Tạo câu hỏi bằng AI
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 8,
+              border: "1.5px solid #e9ecef",
+              background: "#fff",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <IconX size={14} />
+          </button>
+        </div>
+
+        {/* ── Body ── */}
+        <div
+          className="ai-modal-inner"
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "18px 20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          {/* ── Row 1: Tab + Số câu hỏi ── */}
+          <div
+            className="ai-modal-row1"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            {/* Tab pills */}
+            <div
+              className="ai-tab-pills"
+              style={{
+                display: "flex",
+                background: "#f0effc",
+                borderRadius: 10,
+                padding: 4,
+                gap: 4,
+                flex: 1,
+              }}
+            >
+              {[
+                { key: "prompt", label: "Prompt" },
+                { key: "document", label: "Document" },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  style={{
+                    flex: 1,
+                    padding: "7px 0",
+                    borderRadius: 7,
+                    border: "none",
+                    fontSize: 16,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all .15s",
+                    background: tab === key ? "#3d3a8c" : "transparent",
+                    color: tab === key ? "#fff" : "#6c757d",
+                    boxShadow:
+                      tab === key ? "0 1px 4px rgba(61,58,140,0.2)" : "none",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Số câu hỏi */}
+            <div
+              className="ai-modal-qty"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                flexShrink: 0,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 16,
+                  fontWeight: 600,
+                  color: "#374151",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Số câu hỏi
+              </span>
+              <input
+                type="number"
+                min="1"
+                max="50"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                style={{
+                  width: 64,
+                  padding: "7px 8px",
+                  borderRadius: 8,
+                  border: "1.5px solid #e9ecef",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  textAlign: "center",
+                  color: "#3d3a8c",
+                  outline: "none",
+                  fontFamily: "inherit",
+                  background: "#fff",
+                  transition: "border-color .15s",
+                  boxSizing: "border-box",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#3d3a8c")}
+                onBlur={(e) => (e.target.style.borderColor = "#e9ecef")}
+              />
+            </div>
+          </div>
+
+          {/* ── Row 2: Loại câu hỏi ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            <label style={{ fontSize: 16, fontWeight: 600, color: "#374151" }}>
+              Loại câu hỏi
+            </label>
+            <div
+              className="ai-type-pills"
+              style={{ display: "flex", gap: 6, flexWrap: "wrap" }}
+            >
+              {AI_QUESTION_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  className="ai-type-pill"
+                  onClick={() => setQuestionType(t.value)}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 20,
+                    border: `1.5px solid ${questionType === t.value ? "#3d3a8c" : "#e9ecef"}`,
+                    background: questionType === t.value ? "#3d3a8c" : "#fff",
+                    color: questionType === t.value ? "#fff" : "#6c757d",
+                    fontSize: 15,
+
+                    cursor: "pointer",
+                    transition: "all .15s",
+                    whiteSpace: "nowrap",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Tab content ── */}
+          {tab === "prompt" ? (
+            /* ── Prompt tab ── */
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label
+                style={{ fontSize: 16, fontWeight: 600, color: "#374151" }}
+              >
+                Mô tả yêu cầu
+              </label>
+              <div style={{ position: "relative" }}>
+                <textarea
+                  ref={requirementRef}
+                  value={requirement}
+                  maxLength={20000}
+                  onChange={(e) => {
+                    setRequirement(e.target.value);
+                    resizeTextarea(e.target);
+                  }}
+                  placeholder="Nhập nội dung tài liệu hoặc yêu cầu tạo câu hỏi..."
+                  rows={5}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    paddingBottom: 30,
+                    borderRadius: 10,
+                    border: "1.5px solid #e9ecef",
+                    fontSize: 16,
+                    fontFamily: "inherit",
+                    lineHeight: "1.6",
+                    resize: "none",
+                    outline: "none",
+                    boxSizing: "border-box",
+                    color: "#212529",
+                    background: "#fafafa",
+                    transition: "border-color .15s",
+                    minHeight: 120,
+                    overflowWrap: "break-word",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = "#3d3a8c")}
+                  onBlur={(e) => (e.target.style.borderColor = "#e9ecef")}
+                />
+                <span
+                  style={{
+                    position: "absolute",
+                    bottom: 9,
+                    right: 11,
+                    fontSize: 12,
+                    color: requirement.length > 18000 ? "#ef4444" : "#adb5bd",
+                    pointerEvents: "none",
+                  }}
+                >
+                  {requirement.length}/20000
+                </span>
+              </div>
+            </div>
+          ) : (
+            /* ── Document tab ── */
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {/* Dropzone */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  handleFile(e.dataTransfer.files[0]);
+                }}
+                onClick={() => !selectedFile && fileInputRef.current?.click()}
+                style={{
+                  borderRadius: 12,
+                  border: `2px dashed ${dragOver ? "#059669" : selectedFile ? "#6ee7b7" : "#d1d5db"}`,
+                  background: dragOver
+                    ? "#f0fdf4"
+                    : selectedFile
+                      ? "#f0fdf4"
+                      : "#fafafa",
+                  padding: "22px 16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  cursor: selectedFile ? "default" : "pointer",
+                  transition: "all 0.2s",
+                  minHeight: 110,
+                }}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt"
+                  style={{ display: "none" }}
+                  onChange={(e) => handleFile(e.target.files[0])}
+                />
+                {selectedFile ? (
+                  <>
+                    <div
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 10,
+                        background: isPdf
+                          ? "#fee2e2"
+                          : isWord
+                            ? "#e8eef8"
+                            : "#f3f4f6",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {isPdf ? (
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 32 32"
+                          fill="none"
+                        >
+                          <rect width="32" height="32" rx="4" fill="#dc2626" />
+                          <text
+                            x="4"
+                            y="22"
+                            fill="white"
+                            fontSize="11"
+                            fontWeight="bold"
+                            fontFamily="Arial"
+                          >
+                            PDF
+                          </text>
+                        </svg>
+                      ) : isWord ? (
+                        <IconWord size={22} />
+                      ) : (
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#6c757d"
+                          strokeWidth="2"
+                        >
+                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                      )}
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: 16,
+                          fontWeight: 600,
+                          color: "#212529",
+                        }}
+                      >
+                        {selectedFile.name.length > 34
+                          ? selectedFile.name.slice(0, 31) + "..."
+                          : selectedFile.name}
+                      </p>
+                      <p
+                        style={{
+                          margin: "3px 0 0",
+                          fontSize: 14,
+                          color: "#6c757d",
+                        }}
+                      >
+                        {(selectedFile.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedFile(null);
+                      }}
+                      style={{
+                        padding: "4px 13px",
+                        borderRadius: 6,
+                        border: "1.5px solid #fca5a5",
+                        background: "#fff1f2",
+                        color: "#ef4444",
+                        fontSize: 16,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      Xóa file
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 11,
+                        background: "#d1fae5",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <IconUpload size={20} color="#059669" />
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: 16,
+                          fontWeight: 600,
+                          color: "#065f46",
+                        }}
+                      >
+                        Kéo thả hoặc{" "}
+                        <span style={{ textDecoration: "underline" }}>
+                          chọn file
+                        </span>
+                      </p>
+                      <p
+                        style={{
+                          margin: "4px 0 0",
+                          fontSize: 14,
+                          color: "#adb5bd",
+                        }}
+                      >
+                        .pdf · .doc · .docx · .txt — tối đa 10MB
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Prompt bổ sung cho Document tab */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                <label
+                  style={{ fontSize: 16, fontWeight: 600, color: "#374151" }}
+                >
+                  Mô tả yêu cầu
+                </label>
+                <div style={{ position: "relative" }}>
+                  <textarea
+                    ref={docRequirementRef}
+                    value={docRequirement}
+                    maxLength={2000}
+                    onChange={(e) => {
+                      setDocRequirement(e.target.value);
+                      resizeTextarea(e.target);
+                    }}
+                    placeholder="Ví dụ: Tập trung vào chương 3, ưu tiên câu hỏi khó..."
+                    rows={3}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      paddingBottom: 28,
+                      borderRadius: 10,
+                      border: "1.5px solid #e9ecef",
+                      fontSize: 16,
+                      fontFamily: "inherit",
+                      lineHeight: "1.6",
+                      resize: "none",
+                      outline: "none",
+                      boxSizing: "border-box",
+                      color: "#212529",
+                      background: "#fafafa",
+                      transition: "border-color .15s",
+                      minHeight: 80,
+                      overflowWrap: "break-word",
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = "#3d3a8c")}
+                    onBlur={(e) => (e.target.style.borderColor = "#e9ecef")}
+                  />
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: 8,
+                      right: 11,
+                      fontSize: 12,
+                      color:
+                        docRequirement.length > 1800 ? "#ef4444" : "#adb5bd",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    {docRequirement.length}/2000
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Footer ── */}
+        <div
+          className="ai-modal-footer"
+          style={{
+            padding: "12px 20px",
+            borderTop: "1.5px solid #ede9fe",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 8,
+            background: "#f8f7ff",
+            flexShrink: 0,
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              padding: "7px 18px",
+              borderRadius: 8,
+              border: "1.5px solid #e9ecef",
+              background: "#fff",
+              color: "#6c757d",
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            Hủy
+          </button>
+          <button
+            disabled={loading}
+            onClick={handleGenerate}
+            style={{
+              padding: "7px 22px",
+              borderRadius: 8,
+              border: "none",
+              background: loading ? "#6ee7b7" : "#059669",
+              color: "#fff",
+              fontSize: 16,
+              fontWeight: 700,
+              cursor: loading ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              transition: "background 0.15s",
+              fontFamily: "inherit",
+            }}
+          >
+            {loading && (
+              <div
+                style={{
+                  width: 14,
+                  height: 14,
+                  border: "2px solid rgba(255,255,255,0.35)",
+                  borderTopColor: "#fff",
+                  borderRadius: "50%",
+                  animation: "spin 0.7s linear infinite",
+                }}
+              />
+            )}
+            {loading ? "Đang tạo..." : "Tạo câu hỏi"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -1866,6 +2555,7 @@ const CreateQuestion = ({ onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [allErrors, setAllErrors] = useState({});
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showAiModal, setShowAiModal] = useState(false);
   const formRefs = useRef([]);
 
   useEffect(() => {
@@ -1999,6 +2689,33 @@ const CreateQuestion = ({ onClose, onSuccess }) => {
         />
       )}
 
+      {showAiModal && (
+        <AiQuestionModal
+          onClose={() => setShowAiModal(false)}
+          onSuccess={(questions) => {
+            const newForms = questions.map((q) => ({
+              content: q.content?.trim() ?? "",
+              questionType: q.questionType ?? "SINGLE_CHOICE",
+              options: (q.options || []).map((o) => ({
+                optionText: o.optionText?.trim(),
+                isCorrect: o.isCorrect,
+              })),
+              correctAnswers: (q.correctAnswers || []).map((a) => ({
+                answer: a.answer,
+              })),
+              category: null,
+              group: null,
+              mediaUrl: q.mediaUrl ?? null,
+              mediaType: q.mediaType ?? null,
+              mediaObjectKey: q.mediaObjectKey ?? null,
+            }));
+            setForms((prev) => [...prev, ...newForms]);
+            setShowAiModal(false);
+            toast.success(`Đã tạo ${newForms.length} câu hỏi bằng AI!`);
+          }}
+        />
+      )}
+
       <div
         style={{
           position: "fixed",
@@ -2053,33 +2770,6 @@ const CreateQuestion = ({ onClose, onSuccess }) => {
                 gap: 8,
               }}
             >
-              <button
-                onClick={() => setShowImportModal(true)}
-                style={{
-                  padding: "7px 16px",
-                  borderRadius: 8,
-                  border: "1.5px solid #c5c3e8",
-                  background: "#f5f4ff",
-                  color: "#3d3a8c",
-                  fontSize: 16,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 7,
-                  transition: "all 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#ede9fe";
-                  e.currentTarget.style.borderColor = "#3d3a8c";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "#f5f4ff";
-                  e.currentTarget.style.borderColor = "#c5c3e8";
-                }}
-              >
-                <IconUpload size={14} color="#3d3a8c" /> Import file
-              </button>
               <button
                 disabled={loading}
                 onClick={handleSubmit}
@@ -2143,6 +2833,155 @@ const CreateQuestion = ({ onClose, onSuccess }) => {
                 gap: 16,
               }}
             >
+              {/* Import + AI buttons */}
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                {/* Import từ file */}
+                <button
+                  onClick={() => setShowImportModal(true)}
+                  style={{
+                    flex: 1,
+                    minWidth: 200,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "15px 18px",
+                    borderRadius: 12,
+                    border: "2px dashed #c5c3e8",
+                    background: "#faf9ff",
+                    color: "#3d3a8c",
+                    fontSize: 15,
+                    cursor: "pointer",
+                    fontWeight: 500,
+                    transition: "all .15s",
+                    textAlign: "left",
+                    fontFamily: "inherit",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "#3d3a8c";
+                    e.currentTarget.style.background = "#f0effc";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "#c5c3e8";
+                    e.currentTarget.style.background = "#faf9ff";
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      background: "#ede9fe",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <IconUpload size={20} color="#3d3a8c" />
+                  </div>
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: "#3d3a8c",
+                        marginBottom: 2,
+                      }}
+                    >
+                      Import từ file
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: "#6c757d",
+                        fontWeight: 400,
+                      }}
+                    >
+                      Hỗ trợ .xlsx, .xls, .doc, .docx
+                    </div>
+                  </div>
+                </button>
+
+                {/* AI */}
+                <button
+                  onClick={() => setShowAiModal(true)}
+                  style={{
+                    flex: 1,
+                    minWidth: 200,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "15px 18px",
+                    borderRadius: 12,
+                    border: "2px dashed #a7f3d0",
+                    background: "#f0fdf4",
+                    color: "#065f46",
+                    fontSize: 15,
+                    cursor: "pointer",
+                    fontWeight: 500,
+                    transition: "all .15s",
+                    textAlign: "left",
+                    fontFamily: "inherit",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "#10b981";
+                    e.currentTarget.style.background = "#d1fae5";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "#a7f3d0";
+                    e.currentTarget.style.background = "#f0fdf4";
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      background: "#d1fae5",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#059669"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                      <path d="M2 17l10 5 10-5" />
+                      <path d="M2 12l10 5 10-5" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: "#065f46",
+                        marginBottom: 2,
+                      }}
+                    >
+                      AI
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: "#6c757d",
+                        fontWeight: 400,
+                      }}
+                    >
+                      Tạo tự động từ chủ đề hoặc tài liệu
+                    </div>
+                  </div>
+                </button>
+              </div>
               {forms.map((form, idx) => (
                 <QuestionForm
                   key={idx}

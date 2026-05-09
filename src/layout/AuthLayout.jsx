@@ -13,7 +13,7 @@ const AuthLayout = () => {
   const navLinks = [
     { label: "Trang chủ", path: "/trang-chu" },
     { label: "Tính năng", path: "/feature" },
-    { label: "Tin tức", path: "/new" },
+
     { label: "Liên hệ", path: "/contact" },
   ];
 
@@ -68,7 +68,7 @@ const AuthLayout = () => {
         .edu-brand__icon svg { width: 20px; height: 20px; }
 
         .edu-brand__name {
-          font-size: 1.2rem;
+          font-size: 18px;
           font-weight: 800;
           letter-spacing: -0.3px;
           color: var(--blue);
@@ -100,7 +100,7 @@ const AuthLayout = () => {
         }
 
         .edu-nav__link {
-          font-size: 1rem;
+          font-size: 16px;
           font-weight: 600;
           color: var(--muted);
           padding: 0.45rem 0.9rem;
@@ -145,7 +145,7 @@ const AuthLayout = () => {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          font-size: 1rem;
+          font-size: 16px;
           font-weight: 700;
           padding: 0.45rem 1.1rem;
           border-radius: 9px;
@@ -228,7 +228,7 @@ const AuthLayout = () => {
         }
 
         .edu-drawer__link {
-          font-size: 1rem;
+          font-size: 16px;
           font-weight: 600;
           color: var(--muted);
           padding: 0.75rem 1rem;
@@ -258,7 +258,7 @@ const AuthLayout = () => {
         .edu-drawer__auth .btn {
           width: 100%;
           padding: 0.65rem 1rem;
-          font-size: 1rem;
+          font-size: 16px;
         }
 
         /* ═══ RESPONSIVE ═══ */

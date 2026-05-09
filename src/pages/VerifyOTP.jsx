@@ -164,7 +164,7 @@ const VerifyOTP = () => {
         }
 
         .verify-otp-subtitle {
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           text-align: center;
           color: #6c757d;
           margin-bottom: 1.5rem;
@@ -186,7 +186,7 @@ const VerifyOTP = () => {
           gap: 0.5rem;
           padding: 0.65rem 0.85rem;
           border-radius: 8px;
-          font-size: clamp(0.78rem, 2.8vw, 0.85rem);
+          font-size: 14px;
           line-height: 1.5;
           margin-bottom: 1rem;
           word-break: break-word;
@@ -246,7 +246,7 @@ const VerifyOTP = () => {
         .otp-input::-webkit-outer-spin-button { -webkit-appearance: none; }
 
         .field-error {
-          font-size: 0.78rem;
+          font-size: 14px;
           color: #dc3545;
           text-align: center;
           min-height: 1.1em;
@@ -257,7 +257,7 @@ const VerifyOTP = () => {
         .btn-verify {
           width: 100%;
           padding: 0.7rem 1rem;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           font-weight: 600;
           border-radius: 10px;
           background-color: #0d6efd;
@@ -274,7 +274,7 @@ const VerifyOTP = () => {
         /* ── Resend row ── */
         .resend-row {
           text-align: center;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           margin-bottom: 0.75rem;
           color: #6c757d;
         }
@@ -293,7 +293,7 @@ const VerifyOTP = () => {
         .back-link {
           display: block;
           text-align: center;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           color: #0d6efd;
           cursor: pointer;
           transition: opacity 0.2s;

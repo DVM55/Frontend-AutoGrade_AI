@@ -1,6 +1,7 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import Header from "./Header";
+import Chatbot from "../../pages/user/Chatbot";
 
 const LayoutUser = () => {
   return (
@@ -11,6 +12,7 @@ const LayoutUser = () => {
       <main style={{ flex: 1 }}>
         <Outlet />
       </main>
+      <Chatbot />
     </div>
   );
 };

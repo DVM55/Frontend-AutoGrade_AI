@@ -17,7 +17,6 @@ import Layout from "./layout/teacher/Layout";
 import LayoutUser from "./layout/student/LayoutUser";
 import LayoutAdmin from "./layout/admin/LayoutAdmin";
 
-import Exam from "./pages/teacher/Exam";
 import Class from "./pages/teacher/Class";
 import ClassDetail from "./pages/teacher/ClassDetail";
 
@@ -40,8 +39,17 @@ import QuestionBank from "./pages/teacher/QuestionBank";
 import AuthLayout from "./layout/AuthLayout";
 import Feature from "./pages/Feature";
 import Contact from "./pages/Contact";
-import New from "./pages/New";
+
 import ProtectedRoute from "./context/ProtectedRoute";
+
+import QuizUser from "./pages/user/QuizUser";
+import QuizDetailUser from "./pages/user/QuizDetailUser";
+import QuizAttemptReview from "./pages/user/QuizAttemptReview";
+import QuizStart from "./pages/user/QuizStart";
+import Quiz from "./pages/teacher/Quiz";
+import QuizDetail from "./pages/teacher/QuizDetail";
+import History from "./pages/user/History";
+import JoinQuiz from "./pages/user/JoinQuiz";
 
 function App() {
   const { user, loading } = useAuth();
@@ -64,7 +72,7 @@ function App() {
           <Route path="/trang-chu" element={<TrangChu />} />
           <Route path="/feature" element={<Feature />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/new" element={<New />} />
+
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -91,13 +99,18 @@ function App() {
         {user?.role === "TEACHER" && (
           <Route path="/teacher" element={<Layout />}>
             <Route index element={<Navigate to="classes" replace />} />
-            <Route path="exams" element={<Exam />} />
+            <Route path="quizzes" element={<Quiz />} />
             <Route path="classes" element={<Class />} />
             <Route path="classes/:classId" element={<ClassDetail />} />
             <Route path="profile" element={<Profile />} />
             <Route path="change-password" element={<ChangePassword />} />
             <Route path="question-bank" element={<QuestionBank />} />
           </Route>
+        )}
+
+        {/* Quiz Detail route */}
+        {user?.role === "TEACHER" && (
+          <Route path="/teacher/quizzes/:quizId" element={<QuizDetail />} />
         )}
 
         {/* User routes */}
@@ -109,8 +122,23 @@ function App() {
             <Route path="join/class/:classCode" element={<JoinClass />} />
             <Route path="profile" element={<ProfileUser />} />
             <Route path="change-password" element={<ChangePasswordUser />} />
+            <Route path="quizzes" element={<QuizUser />} />
+            <Route path="quizzes/:id" element={<QuizDetailUser />} />
+            <Route path="history" element={<History />} />
+            <Route path="quiz/:quizCode" element={<JoinQuiz />} />
           </Route>
         </Route>
+
+        {user?.role === "USER" && (
+          <>
+            <Route
+              path="/user/quiz-attempt/review/:attemptId"
+              element={<QuizAttemptReview />}
+            />
+
+            <Route path="/user/quiz/:quizId/start" element={<QuizStart />} />
+          </>
+        )}
       </Routes>
     </>
   );

@@ -22,36 +22,39 @@ const fileIconClass = (contentType) => {
   return "bi-file-earmark text-secondary";
 };
 
-const isTextFile = (contentType) =>
-  contentType?.startsWith("text/") || contentType === "application/json";
+const isTextFile = (ct) => ct?.startsWith("text/") || ct === "application/json";
+const isImageFile = (ct) => ct?.startsWith("image/");
+const isVideoFile = (ct) => ct?.startsWith("video/");
+const isAudioFile = (ct) => ct?.startsWith("audio/");
+const isPdfFile = (ct) => ct?.includes("pdf");
 
-// ─── Download helper ──────────────────────────────────────────────────────────
+const formatDate = (dateStr) => {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("vi-VN");
+};
+
 const triggerDownload = async (fileUrl, fileName) => {
   try {
     const res = await fetch(fileUrl);
     const blob = await res.blob();
-
     const url = window.URL.createObjectURL(blob);
-
     const a = document.createElement("a");
     a.href = url;
     a.download = fileName || "download";
     document.body.appendChild(a);
     a.click();
-
     a.remove();
     window.URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error("Download failed", err);
-    window.open(fileUrl, "_blank"); // fallback
+  } catch {
+    window.open(fileUrl, "_blank");
   }
 };
 
-// ─── Text Viewer Modal ────────────────────────────────────────────────────────
-const TextViewerModal = ({ file, onClose }) => {
-  const { fileUrl, fileName } = file;
-  const [content, setContent] = useState(null);
-  const [loading, setLoading] = useState(true);
+// ─── Full-screen Document Viewer ──────────────────────────────────────────────
+const DocumentViewer = ({ file, onClose }) => {
+  const { fileUrl, fileName, contentType } = file;
+  const [textContent, setTextContent] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -70,72 +73,165 @@ const TextViewerModal = ({ file, onClose }) => {
   }, [onClose]);
 
   useEffect(() => {
-    // Fetch dưới dạng ArrayBuffer rồi decode UTF-8 thủ công → không bị lỗi encoding
-    fetch(fileUrl)
-      .then((r) => r.arrayBuffer())
-      .then((buf) => {
-        const decoder = new TextDecoder("utf-8");
-        setContent(decoder.decode(buf));
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, [fileUrl]);
+    if (isTextFile(contentType)) {
+      setLoading(true);
+      fetch(fileUrl)
+        .then((r) => r.arrayBuffer())
+        .then((buf) => setTextContent(new TextDecoder("utf-8").decode(buf)))
+        .catch(() => setError(true))
+        .finally(() => setLoading(false));
+    }
+  }, [fileUrl, contentType]);
 
-  return ReactDOM.createPortal(
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 99999,
-        background: "rgba(0,0,0,0.72)",
-        display: "flex",
-        flexDirection: "column",
-        animation: "tv-fadein 0.18s both",
-      }}
-    >
-      <style>{`@keyframes tv-fadein { from { opacity:0; } to { opacity:1; } }`}</style>
-
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "10px clamp(10px, 2vw, 18px)",
-          background: "#fff",
-          borderBottom: "1px solid #e5e7eb",
-          flexShrink: 0,
-          height: 52,
-          boxSizing: "border-box",
-          minWidth: 0,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            flex: 1,
-            minWidth: 0,
-            overflow: "hidden",
-          }}
-        >
-          <i
-            className="bi bi-file-earmark-text text-secondary"
-            style={{ fontSize: 18, flexShrink: 0 }}
-          />
-          <span
-            title={fileName}
+  const renderBody = () => {
+    if (isImageFile(contentType)) {
+      return (
+        <div style={vs.center}>
+          <img
+            src={fileUrl}
+            alt={fileName}
             style={{
-              fontWeight: 600,
-              fontSize: 16,
-              color: "#111827",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              minWidth: 0,
+              maxWidth: "100%",
+              maxHeight: "100%",
+              objectFit: "contain",
+              borderRadius: 8,
+            }}
+          />
+        </div>
+      );
+    }
+    if (isVideoFile(contentType)) {
+      return (
+        <div style={vs.center}>
+          <video
+            controls
+            autoPlay
+            src={fileUrl}
+            style={{ maxWidth: "100%", maxHeight: "100%", borderRadius: 8 }}
+          />
+        </div>
+      );
+    }
+    if (isAudioFile(contentType)) {
+      return (
+        <div style={vs.center}>
+          <div style={{ textAlign: "center" }}>
+            <i
+              className={`bi ${fileIconClass(contentType)}`}
+              style={{
+                fontSize: 72,
+                marginBottom: 24,
+                display: "block",
+                color: "#f59e0b",
+              }}
+            />
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: 16,
+                color: "#111827",
+                marginBottom: 20,
+              }}
+            >
+              {fileName}
+            </div>
+            <audio
+              controls
+              autoPlay
+              src={fileUrl}
+              style={{ width: "100%", maxWidth: 480 }}
+            />
+          </div>
+        </div>
+      );
+    }
+    if (isPdfFile(contentType)) {
+      return (
+        <iframe
+          src={`${fileUrl}#toolbar=1`}
+          title={fileName}
+          style={{ flex: 1, width: "100%", border: "none" }}
+        />
+      );
+    }
+    if (isTextFile(contentType)) {
+      if (loading)
+        return (
+          <div style={vs.center}>
+            <span className="spinner-border spinner-border-sm me-2" />
+            <span style={{ color: "#6b7280" }}>Đang tải nội dung…</span>
+          </div>
+        );
+      if (error)
+        return (
+          <div
+            style={{
+              ...vs.center,
+              flexDirection: "column",
+              gap: 8,
+              color: "#ef4444",
             }}
           >
+            <i className="bi bi-exclamation-circle" style={{ fontSize: 32 }} />
+            <div>Không thể tải nội dung file.</div>
+          </div>
+        );
+      return <pre style={vs.textPre}>{textContent}</pre>;
+    }
+    // Unsupported
+    return (
+      <div
+        style={{
+          ...vs.center,
+          flexDirection: "column",
+          gap: 16,
+          color: "#6b7280",
+        }}
+      >
+        <i
+          className={`bi ${fileIconClass(contentType)}`}
+          style={{ fontSize: 64 }}
+        />
+        <div style={{ fontWeight: 600, fontSize: 16, color: "#111827" }}>
+          {fileName}
+        </div>
+        <div style={{ fontSize: 14 }}>Không thể xem trước loại file này.</div>
+        <a
+          href={fileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "9px 20px",
+            borderRadius: 9,
+            background: "#1a73e8",
+            color: "#fff",
+            fontWeight: 600,
+            fontSize: 15,
+            textDecoration: "none",
+          }}
+        >
+          <i className="bi bi-box-arrow-up-right" />
+          Mở file
+        </a>
+      </div>
+    );
+  };
+
+  return ReactDOM.createPortal(
+    <div style={vs.root}>
+      <style>{`@keyframes dv-fadein { from { opacity:0; } to { opacity:1; } }`}</style>
+
+      {/* Header */}
+      <div style={vs.header}>
+        <div style={vs.headerLeft}>
+          <i
+            className={`bi ${fileIconClass(contentType)}`}
+            style={{ fontSize: 18, flexShrink: 0 }}
+          />
+          <span title={fileName} style={vs.title}>
             {fileName}
           </span>
         </div>
@@ -148,266 +244,109 @@ const TextViewerModal = ({ file, onClose }) => {
           }}
         >
           <button
-            onClick={onClose}
-            title="Đóng (Esc)"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 32,
-              height: 32,
-              borderRadius: 7,
-              border: "1.5px solid #d1d5db",
-              background: "#fff",
-              color: "#374151",
-              cursor: "pointer",
-              fontSize: 16,
-              padding: 0,
-            }}
+            onClick={() => triggerDownload(fileUrl, fileName)}
+            style={vs.headerBtn}
+            title="Tải xuống"
           >
-            <i className="bi bi-x-lg" />
+            <i className="bi bi-download" />
+            <span className="d-none d-sm-inline" style={{ fontSize: 15 }}>
+              Tải xuống
+            </span>
           </button>
+          <button
+            onClick={onClose}
+            className="btn-close"
+            style={{ flexShrink: 0 }}
+          />
         </div>
       </div>
 
       {/* Body */}
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        {loading && (
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#6b7280",
-              background: "#f9fafb",
-            }}
-          >
-            <span className="spinner-border spinner-border-sm me-2" />
-            Đang tải nội dung…
-          </div>
-        )}
-        {error && (
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ef4444",
-              background: "#f9fafb",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            <i className="bi bi-exclamation-circle" style={{ fontSize: 32 }} />
-            <div>Không thể tải nội dung file.</div>
-          </div>
-        )}
-        {!loading && !error && (
-          <pre
-            style={{
-              flex: 1,
-              minHeight: 0,
-              overflowY: "auto",
-              background: "#f8f9fa",
-              margin: 0,
-              padding: "16px clamp(12px, 3vw, 24px)",
-              fontSize: 16,
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-              lineHeight: 1.7,
-              color: "#111827",
-            }}
-          >
-            {content}
-          </pre>
-        )}
-      </div>
+      <div style={vs.body}>{renderBody()}</div>
     </div>,
     document.body,
   );
 };
 
-// ─── File Action Modal ────────────────────────────────────────────────────────
-const FileActionModal = ({ file, onClose, onViewText }) => {
-  const { contentType, fileUrl, fileName } = file;
-
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onClose]);
-
-  return ReactDOM.createPortal(
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 99999,
-        background: "rgba(0,0,0,0.55)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-        animation: "fam-fadein 0.18s both",
-      }}
-    >
-      <style>{`@keyframes fam-fadein { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }`}</style>
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "#fff",
-          borderRadius: 16,
-          boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
-          padding: "28px 24px 24px",
-          width: "100%",
-          maxWidth: 380,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 12,
-          textAlign: "center",
-        }}
-      >
-        <i
-          className={`bi ${fileIconClass(contentType)}`}
-          style={{ fontSize: 48 }}
-        />
-        <div
-          title={fileName}
-          style={{
-            fontWeight: 600,
-            fontSize: 16,
-            color: "#111827",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            width: "100%",
-          }}
-        >
-          {fileName}
-        </div>
-
-        <div style={{ display: "flex", gap: 10, width: "100%", marginTop: 4 }}>
-          {/* File text: nút "Xem nội dung" thay cho "Mở file" */}
-          {isTextFile(contentType) ? (
-            <button
-              onClick={() => {
-                onClose();
-                onViewText(file);
-              }}
-              style={{
-                flex: 1,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 7,
-                padding: "10px 0",
-                borderRadius: 9,
-                background: "#1a73e8",
-                color: "#fff",
-                fontWeight: 600,
-                fontSize: 16,
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              <i className="bi bi-eye" style={{ fontSize: 16 }} />
-              Xem nội dung
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                window.open(fileUrl, "_blank", "noopener,noreferrer");
-                onClose();
-              }}
-              style={{
-                flex: 1,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 7,
-                padding: "10px 0",
-                borderRadius: 9,
-                background: "#1a73e8",
-                color: "#fff",
-                fontWeight: 600,
-                fontSize: 16,
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              <i
-                className="bi bi-box-arrow-up-right"
-                style={{ fontSize: 16 }}
-              />
-              Mở file
-            </button>
-          )}
-
-          <button
-            onClick={() => {
-              triggerDownload(fileUrl, fileName);
-              onClose();
-            }}
-            style={{
-              flex: 1,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 7,
-              padding: "10px 0",
-              borderRadius: 9,
-              background: "#fff",
-              color: "#374151",
-              fontWeight: 600,
-              fontSize: 16,
-              border: "1.5px solid #d1d5db",
-              cursor: "pointer",
-            }}
-          >
-            <i className="bi bi-download" style={{ fontSize: 16 }} />
-            Tải xuống
-          </button>
-        </div>
-
-        <button
-          onClick={onClose}
-          style={{
-            marginTop: 2,
-            background: "none",
-            border: "none",
-            color: "#9ca3af",
-            fontSize: 16,
-            cursor: "pointer",
-            padding: "4px 8px",
-          }}
-        >
-          Đóng
-        </button>
-      </div>
-    </div>,
-    document.body,
-  );
+const vs = {
+  root: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 99999,
+    background: "#f3f4f6",
+    display: "flex",
+    flexDirection: "column",
+    animation: "dv-fadein 0.2s both",
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    padding: "10px 16px",
+    background: "#fff",
+    borderBottom: "1px solid #e5e7eb",
+    flexShrink: 0,
+    height: 54,
+    boxSizing: "border-box",
+  },
+  headerLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: 9,
+    flex: 1,
+    minWidth: 0,
+    overflow: "hidden",
+  },
+  title: {
+    fontWeight: 600,
+    fontSize: 16,
+    color: "#111827",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  headerBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "6px 14px",
+    borderRadius: 8,
+    border: "1.5px solid #d1d5db",
+    background: "#fff",
+    color: "#374151",
+    fontWeight: 500,
+    fontSize: 15,
+    cursor: "pointer",
+  },
+  body: {
+    flex: 1,
+    minHeight: 0,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  },
+  center: {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    overflow: "auto",
+  },
+  textPre: {
+    flex: 1,
+    minHeight: 0,
+    overflowY: "auto",
+    background: "#f8f9fa",
+    margin: 0,
+    padding: "16px clamp(12px, 3vw, 28px)",
+    fontSize: 16,
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+    lineHeight: 1.75,
+    color: "#111827",
+  },
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -418,8 +357,7 @@ const DocumentUser = ({ classId }) => {
   const [size] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [actionFile, setActionFile] = useState(null);
-  const [textViewFile, setTextViewFile] = useState(null);
+  const [viewerFile, setViewerFile] = useState(null);
 
   const fetchFiles = async (page = 0) => {
     if (!classId) return;
@@ -444,18 +382,9 @@ const DocumentUser = ({ classId }) => {
     fetchFiles(0);
   }, [classId]);
 
-  const handleFileClick = (e, file) => {
-    e.preventDefault();
-    setActionFile(file);
-  };
-
   return (
     <>
       <style>{documentStyle}</style>
-
-      {!loading && totalElements > 0 && (
-        <div className="du-result-count">{totalElements} kết quả tìm thấy</div>
-      )}
 
       {!loading && files.length === 0 && (
         <div className="du-empty">
@@ -475,28 +404,23 @@ const DocumentUser = ({ classId }) => {
             </thead>
             <tbody>
               {files.map((file) => (
-                <tr key={file.id} onClick={(e) => handleFileClick(e, file)}>
+                <tr
+                  key={file.id}
+                  onClick={() => setViewerFile(file)}
+                  className="du-row"
+                >
                   <td>
                     <div className="du-file-name">
                       <i
                         className={`bi ${fileIconClass(file.contentType)}`}
                         style={{ fontSize: 18, flexShrink: 0 }}
                       />
-                      <a
-                        href={file.fileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        title={file.fileName}
-                        className="du-file-link"
-                        onClick={(e) => handleFileClick(e, file)}
-                      >
+                      <span className="du-file-link" title={file.fileName}>
                         {file.fileName}
-                      </a>
+                      </span>
                     </div>
                   </td>
-                  <td className="du-date">
-                    {new Date(file.updatedAt).toLocaleDateString("vi-VN")}
-                  </td>
+                  <td className="du-date">{formatDate(file.updatedAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -532,48 +456,40 @@ const DocumentUser = ({ classId }) => {
         </div>
       )}
 
-      {actionFile && (
-        <FileActionModal
-          file={actionFile}
-          onClose={() => setActionFile(null)}
-          onViewText={(file) => setTextViewFile(file)}
-        />
-      )}
-
-      {textViewFile && (
-        <TextViewerModal
-          file={textViewFile}
-          onClose={() => setTextViewFile(null)}
-        />
+      {viewerFile && (
+        <DocumentViewer file={viewerFile} onClose={() => setViewerFile(null)} />
       )}
     </>
   );
 };
 
 const documentStyle = `
-  .du-result-count { font-size: 15px; color: #6b7280; margin-bottom: 10px; }
+  .du-result-count { font-size: 16px; color: #6b7280; margin-bottom: 10px; }
   .du-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 16px; animation: du-fadein 0.25s both; }
   .du-empty__icon { font-size: 40px; margin-bottom: 8px; }
   .du-empty__title { font-size: 16px; font-weight: 500; color: #6b7280; }
+
   .du-table-wrap { border-radius: 12px; overflow: hidden; border: 1.5px solid #e5e7eb; background: #fff; }
   .du-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .du-table thead tr { background: #f9fafb; }
   .du-table th { padding: 11px 16px; font-size: 16px; font-weight: 600; color: #6b7280; text-align: left; border-bottom: 1.5px solid #e5e7eb; white-space: nowrap; }
   .du-th-date { width: 130px; }
-  .du-table tbody tr { cursor: pointer; transition: background 0.13s; border-bottom: 1px solid #f3f4f6; }
-  .du-table tbody tr:last-child { border-bottom: none; }
-  .du-table tbody tr:hover { background: #f0f7ff; }
+  .du-table tbody tr.du-row { cursor: pointer; transition: background 0.13s; border-bottom: 1px solid #f3f4f6; }
+  .du-table tbody tr.du-row:last-child { border-bottom: none; }
+  .du-table tbody tr.du-row:hover { background: #f0f7ff; }
   .du-table td { padding: 11px 16px; vertical-align: middle; overflow: hidden; }
   .du-file-name { display: flex; align-items: center; gap: 9px; min-width: 0; overflow: hidden; }
-  .du-file-link { font-size: 16px; color: #111827; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; display: block; }
-  .du-file-link:hover { color: #1a73e8; text-decoration: underline; }
+  .du-file-link { font-size: 16px; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
   .du-date { font-size: 16px; color: #9ca3af; white-space: nowrap; width: 130px; }
+
   @media (max-width: 400px) { .du-th-date, .du-date { display: none; } }
+
   .du-pagination { display: flex; justify-content: center; align-items: center; gap: 4px; margin-top: 16px; flex-wrap: wrap; }
-  .du-page-btn { min-width: 34px; height: 34px; padding: 0 8px; border: 1.5px solid #e5e7eb; border-radius: 7px; background: #fff; color: #1a1a2e; font-size: 16px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+  .du-page-btn { min-width: 36px; height: 36px; padding: 0 8px; border: 1.5px solid #e5e7eb; border-radius: 7px; background: #fff; color: #1a1a2e; font-size: 16px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
   .du-page-btn:hover:not(:disabled) { border-color: #1a73e8; color: #1a73e8; }
   .du-page-btn--active { background: #1a73e8; color: #fff; border-color: #1a73e8; font-weight: 600; }
   .du-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
   @keyframes du-fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 `;
 

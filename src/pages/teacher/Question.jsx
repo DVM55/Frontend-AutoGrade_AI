@@ -957,6 +957,12 @@ const Question = forwardRef((props, ref) => {
     setFilterGroup(null);
     setFilterType(null);
     setShowTypeDropdown(false);
+    setAppliedFilter({
+      category: null,
+      group: null,
+      type: null,
+      mode: MODE_ALL,
+    });
   };
   const handleApplyFilter = () => {
     setAppliedFilter({

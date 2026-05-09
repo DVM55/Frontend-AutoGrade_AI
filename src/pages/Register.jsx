@@ -126,7 +126,7 @@ const Register = () => {
         }
 
         .register-subtitle {
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           text-align: center;
           color: #6c757d;
           margin-bottom: 1rem;
@@ -174,13 +174,13 @@ const Register = () => {
         }
 
         .role-label {
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 18px;
           font-weight: 600;
           color: #212529;
         }
 
         .role-desc {
-          font-size: clamp(0.9rem, 2.5vw, 1rem);
+          font-size: 15px;
           color: #6c757d;
           line-height: 1.4;
         }
@@ -188,7 +188,7 @@ const Register = () => {
         .btn-continue {
           width: 100%;
           padding: 0.7rem 1rem;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           font-weight: 600;
           border-radius: 10px;
           background-color: #0d6efd;
@@ -209,7 +209,7 @@ const Register = () => {
           gap: 0.5rem;
           padding: 0.65rem 0.85rem;
           border-radius: 8px;
-          font-size: clamp(0.78rem, 2.8vw, 0.85rem);
+          font-size: 14px;
           line-height: 1.5;
           margin-bottom: 1rem;
           word-break: break-word;
@@ -232,7 +232,7 @@ const Register = () => {
         /* ── Form labels ── */
         .form-label {
           display: block;
-          font-size: clamp(1rem, 2.8vw, 1.1rem);
+          font-size: 16px;
           font-weight: 600;
           color: #333;
           margin-bottom: 0.35rem;
@@ -244,7 +244,7 @@ const Register = () => {
         .form-input {
           width: 100%;
           padding: 0.6rem 0.85rem;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           border: 1px solid #dee2e6;
           border-radius: 10px;
           outline: none;
@@ -276,7 +276,7 @@ const Register = () => {
           transform: translateY(-50%);
           cursor: pointer;
           color: #6c757d;
-          font-size: 1rem;
+          font-size: 16px;
           line-height: 1;
           user-select: none;
           background: none;
@@ -292,7 +292,7 @@ const Register = () => {
         }
 
         .field-error {
-          font-size: 0.78rem;
+          font-size: 14px;
           color: #dc3545;
           margin-top: 0.3rem;
           min-height: 1em;
@@ -304,7 +304,7 @@ const Register = () => {
         .btn-submit {
           width: 100%;
           padding: 0.7rem 1rem;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           font-weight: 600;
           border-radius: 10px;
           background-color: #0d6efd;
@@ -337,7 +337,7 @@ const Register = () => {
 
         .login-row {
           text-align: center;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           color: #6c757d;
         }
 

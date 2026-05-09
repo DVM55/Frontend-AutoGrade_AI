@@ -94,7 +94,7 @@ const ResetPassword = () => {
         }
 
         .reset-subtitle {
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           text-align: center;
           color: #6c757d;
           margin-bottom: 1rem;
@@ -108,7 +108,7 @@ const ResetPassword = () => {
           gap: 0.5rem;
           padding: 0.65rem 0.85rem;
           border-radius: 8px;
-          font-size: clamp(0.78rem, 2.8vw, 0.85rem);
+          font-size: 14px;
           line-height: 1.5;
           margin-bottom: 1rem;
           word-break: break-word;
@@ -131,7 +131,7 @@ const ResetPassword = () => {
         /* ── Form label ── */
         .form-label {
           display: block;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           font-weight: 600;
           color: #333;
           margin-bottom: 0.35rem;
@@ -144,7 +144,7 @@ const ResetPassword = () => {
           width: 100%;
           padding: 0.6rem 0.85rem;
           padding-right: 2.6rem;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           border: 1px solid #dee2e6;
           border-radius: 10px;
           outline: none;
@@ -178,7 +178,7 @@ const ResetPassword = () => {
           transform: translateY(-50%);
           cursor: pointer;
           color: #6c757d;
-          font-size: 1rem;
+          font-size: 16px;
           line-height: 1;
           user-select: none;
           background: none;
@@ -195,7 +195,7 @@ const ResetPassword = () => {
 
         /* ── Field error ── */
         .field-error {
-          font-size: 0.78rem;
+          font-size: 14px;
           color: #dc3545;
           margin-top: 0.3rem;
           min-height: 1em;
@@ -207,7 +207,7 @@ const ResetPassword = () => {
         .btn-submit {
           width: 100%;
           padding: 0.7rem 1rem;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           font-weight: 600;
           border-radius: 10px;
           background-color: #0d6efd;
@@ -242,7 +242,7 @@ const ResetPassword = () => {
         .back-link {
           display: block;
           text-align: center;
-          font-size: clamp(1rem, 3vw, 1.1rem);
+          font-size: 16px;
           color: #0d6efd;
           cursor: pointer;
           transition: opacity 0.2s;

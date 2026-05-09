@@ -215,22 +215,9 @@ const Feature = () => {
           margin-bottom: 48px;
         }
 
-        .fp-section__tag {
-          display: inline-block;
-          background: var(--blue-soft);
-          color: var(--blue);
-          font-size: 0.78rem;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          padding: 4px 12px;
-          border-radius: 99px;
-          margin-bottom: 12px;
-        }
-
         .fp-section__title {
-          font-size: clamp(1.6rem, 3.5vw, 2.4rem);
-          font-weight: 900;
+          font-size: 25px;
+          font-weight: 800;
           color: var(--text);
           line-height: 1.2;
           margin-bottom: 12px;
@@ -238,7 +225,7 @@ const Feature = () => {
 
         .fp-section__sub {
           color: var(--muted);
-          font-size: 1rem;
+          font-size: 16px;
           max-width: 520px;
           margin: 0 auto;
           line-height: 1.6;
@@ -303,7 +290,7 @@ const Feature = () => {
         }
 
         .fp-card__title {
-          font-size: 1.1rem;
+          font-size: 17px;
           font-weight: 800;
           color: var(--text);
           margin-bottom: 8px;
@@ -311,7 +298,7 @@ const Feature = () => {
         }
 
         .fp-card__desc {
-          font-size: 1rem;
+          font-size: 16px;
           color: var(--muted);
           line-height: 1.6;
           margin-bottom: 20px;
@@ -328,7 +315,7 @@ const Feature = () => {
           display: flex;
           align-items: flex-start;
           gap: 9px;
-          font-size: 0.9rem;
+          font-size: 14px;
           color: #374151;
           line-height: 1.5;
         }
@@ -354,7 +341,7 @@ const Feature = () => {
           }
           .fp-card__icon { margin-bottom: 16px; }
           .fp-card__title { margin-bottom: 8px; }
-          .fp-card__desc { margin-bottom: 0; font-size: 1rem; }
+          .fp-card__desc { margin-bottom: 0; font-size: 16px; }
         }
 
         /* ── CTA Section ── */
@@ -386,13 +373,13 @@ const Feature = () => {
         }
 
         .fp-cta-box h2 {
-          font-size: clamp(1.5rem, 3vw, 2rem);
-          font-weight: 900;
+          font-size: 25px;
+          font-weight: 800;
           margin-bottom: 12px;
         }
 
         .fp-cta-box p {
-          font-size: 1rem;
+          font-size: 16px;
           opacity: 0.88;
           margin-bottom: 32px;
           line-height: 1.6;
@@ -408,7 +395,7 @@ const Feature = () => {
         .fp-btn-white {
           background: #fff;
           color: var(--blue);
-          font-size: 1rem;
+          font-size: 16px;
           font-weight: 700;
           padding: 0.65rem 1.5rem;
           border-radius: 10px;
@@ -426,7 +413,7 @@ const Feature = () => {
         .fp-btn-ghost {
           background: rgba(255,255,255,0.15);
           color: #fff;
-          font-size: 1rem;
+          font-size: 16px;
           font-weight: 700;
           padding: 0.65rem 1.5rem;
           border-radius: 10px;

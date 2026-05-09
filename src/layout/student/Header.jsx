@@ -7,11 +7,17 @@ import avatarImg from "../../assets/avatarImg.png";
 const Header = () => {
   const [hasNotif, setHasNotif] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { user, setUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isClassActive = location.pathname.startsWith("/user/class");
+  const isActive = (path) => location.pathname === path;
+
+  const navLinks = [
+    { label: "Lớp", path: "/user/class" },
+    { label: "Lịch sử nộp bài", path: "/user/history" },
+  ];
 
   const fetchProfile = async () => {
     try {
@@ -38,6 +44,7 @@ const Header = () => {
   return (
     <>
       <style>{`
+        /* ═══ HEADER ═══ */
         .user-header {
           position: sticky;
           top: 0;
@@ -83,22 +90,17 @@ const Header = () => {
           flex-shrink: 0;
         }
 
-        .user-brand__icon svg {
-          width: 18px;
-          height: 18px;
-        }
+        .user-brand__icon svg { width: 18px; height: 18px; }
 
         .user-brand__name {
-          font-size: clamp(1.2rem, 4vw, 1.2rem);
+          font-size: clamp(1.1rem, 4vw, 1.2rem);
           font-weight: 800;
           letter-spacing: -0.3px;
           color: var(--blue);
           line-height: 1;
         }
 
-        .user-brand__name span {
-          color: var(--text);
-        }
+        .user-brand__name span { color: var(--text); }
 
         /* ── Centre nav ── */
         .user-nav {
@@ -121,7 +123,6 @@ const Header = () => {
           cursor: pointer;
           background: none;
           border: none;
-          position: relative;
           transition: color 0.18s, background 0.18s;
           white-space: nowrap;
           line-height: 1;
@@ -129,14 +130,8 @@ const Header = () => {
           align-items: center;
         }
 
-        .user-nav__link:hover {
-          color: var(--blue);
-          background: var(--blue-soft);
-        }
-
-        .user-nav__link.is-active {
-          color: var(--blue);
-        }
+        
+        .user-nav__link.is-active { color: var(--blue);  }
 
         /* ── Right controls ── */
         .user-header__right {
@@ -162,10 +157,7 @@ const Header = () => {
           transition: background 0.15s, color 0.15s;
         }
 
-        .notif-btn:hover {
-          background: var(--blue-soft);
-          color: var(--blue);
-        }
+        .notif-btn:hover { background: var(--blue-soft); color: var(--blue); }
 
         .notif-dot {
           position: absolute;
@@ -186,9 +178,7 @@ const Header = () => {
         }
 
         /* ── Avatar dropdown ── */
-        #avatar-dropdown-wrap {
-          position: relative;
-        }
+        #avatar-dropdown-wrap { position: relative; }
 
         .avatar-trigger {
           display: flex;
@@ -239,9 +229,7 @@ const Header = () => {
           transition: transform 0.2s;
         }
 
-        .avatar-chevron.open {
-          transform: rotate(180deg);
-        }
+        .avatar-chevron.open { transform: rotate(180deg); }
 
         /* ── Dropdown panel ── */
         .avatar-dropdown {
@@ -254,7 +242,7 @@ const Header = () => {
           border-radius: 14px;
           box-shadow: 0 8px 32px rgba(13, 110, 253, 0.12), 0 2px 8px rgba(0,0,0,0.08);
           padding: 6px;
-          z-index: 999;
+          z-index: 1001;
           animation: dropIn 0.18s ease;
         }
 
@@ -288,9 +276,7 @@ const Header = () => {
           display: block;
         }
 
-        .dropdown-header__info {
-          overflow: hidden;
-        }
+        .dropdown-header__info { overflow: hidden; }
 
         .dropdown-header__name {
           font-size: 1rem;
@@ -326,58 +312,158 @@ const Header = () => {
           transition: background 0.15s, color 0.15s;
         }
 
-        .dropdown-item:hover {
-          background: var(--blue-soft);
-          color: var(--blue);
+        .dropdown-item:hover { background: var(--blue-soft); color: var(--blue); }
+        .dropdown-item i { font-size: 1rem; color: var(--muted); width: 18px; text-align: center; transition: color 0.15s; }
+        .dropdown-item:hover i { color: var(--blue); }
+
+        .dropdown-item.danger { color: #c0392b; }
+        .dropdown-item.danger:hover { background: #fff5f5; color: #c0392b; }
+        .dropdown-item.danger i { color: #c0392b; }
+
+        .dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+        /* ── Hamburger ── */
+        .user-hamburger {
+          display: none;
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 6px;
+          border-radius: 8px;
+          color: var(--text);
+          transition: background 0.15s;
+          margin-left: auto;
         }
 
-        .dropdown-item i {
+        .user-hamburger:hover { background: var(--blue-soft); }
+
+        /* ═══ MOBILE DRAWER ═══ */
+        .user-drawer {
+          display: none;
+          position: fixed;
+          inset: var(--header-h) 0 0 0;
+          z-index: 999;
+          background: rgba(0,0,0,0.35);
+          backdrop-filter: blur(2px);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.25s;
+        }
+
+        .user-drawer.is-open {
+          opacity: 1;
+          pointer-events: all;
+        }
+
+        .user-drawer__panel {
+          background: var(--surface);
+          width: min(300px, 85vw);
+          height: 100%;
+          padding: 1.25rem 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          transform: translateX(-100%);
+          transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+          box-shadow: 4px 0 24px rgba(0,0,0,0.1);
+        }
+
+        .user-drawer.is-open .user-drawer__panel {
+          transform: translateX(0);
+        }
+
+        /* drawer user info */
+        .user-drawer__user {
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
+          padding: 4px 0.5rem 14px;
+          border-bottom: 1px solid var(--border);
+          margin-bottom: 6px;
+        }
+
+        .user-drawer__avatar {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          overflow: hidden;
+          border: 2px solid var(--border);
+          flex-shrink: 0;
+        }
+
+        .user-drawer__avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .user-drawer__info { overflow: hidden; }
+
+        .user-drawer__name {
           font-size: 1rem;
+          font-weight: 700;
+          color: var(--text);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .user-drawer__email {
+          font-size: 0.85rem;
           color: var(--muted);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin-top: 2px;
+        }
+
+        .user-drawer__link {
+          font-size: 1rem;
+          font-weight: 600;
+          color: var(--muted);
+          padding: 0.7rem 1rem;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: color 0.15s, background 0.15s;
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+        }
+
+        .user-drawer__link:hover,
+        .user-drawer__link.is-active {
+          color: var(--blue);
+          background: var(--blue-soft);
+        }
+
+        .user-drawer__link i {
+          font-size: 1rem;
           width: 18px;
           text-align: center;
-          transition: color 0.15s;
         }
 
-        .dropdown-item:hover i {
-          color: var(--blue);
-        }
-
-        .dropdown-item.danger {
-          color: #c0392b;
-        }
-
-        .dropdown-item.danger:hover {
-          background: #fff5f5;
-          color: #c0392b;
-        }
-
-        .dropdown-item.danger i {
-          color: #c0392b;
-        }
-
-        .dropdown-divider {
+        .user-drawer__divider {
           height: 1px;
           background: var(--border);
-          margin: 4px 0;
+          margin: 0.5rem 0;
         }
 
-        @media (max-width: 480px) {
-          .avatar-name { display: none; }
-          .avatar-chevron { display: none; }
-          .avatar-trigger {
-            padding: 4px;
-          }
-          .header-divider { display: none; }
-          .notif-btn {
-            width: 34px;
-            height: 34px;
-          }
+        .user-drawer__link.danger { color: #c0392b; }
+        .user-drawer__link.danger:hover { background: #fff5f5; }
+
+        /* ═══ RESPONSIVE ═══ */
+        @media (max-width: 768px) {
+          .user-nav        { display: none; }
+          .header-divider  { display: none; }
+          #avatar-dropdown-wrap { display: none; }
+          .user-hamburger  { display: flex; }
+          .user-drawer     { display: block; }
+          .notif-btn       { width: 34px; height: 34px; }
         }
 
         @media (max-width: 320px) {
           .user-brand__name { display: none; }
-          .user-header__inner { gap: 0.25rem; }
         }
       `}</style>
 
@@ -406,14 +492,17 @@ const Header = () => {
             </div>
           </button>
 
-          {/* Centre nav */}
+          {/* Centre nav – desktop */}
           <nav className="user-nav">
-            <button
-              className={`user-nav__link${isClassActive ? " is-active" : ""}`}
-              onClick={() => navigate("/user/class")}
-            >
-              Lớp
-            </button>
+            {navLinks.map((link) => (
+              <button
+                key={link.path}
+                className={`user-nav__link${isActive(link.path) ? " is-active" : ""}`}
+                onClick={() => navigate(link.path)}
+              >
+                {link.label}
+              </button>
+            ))}
           </nav>
 
           {/* Right controls */}
@@ -429,6 +518,7 @@ const Header = () => {
 
             <div className="header-divider" />
 
+            {/* Avatar dropdown – desktop */}
             <div id="avatar-dropdown-wrap">
               <button
                 className="avatar-trigger"
@@ -452,7 +542,6 @@ const Header = () => {
 
               {showDropdown && (
                 <div className="avatar-dropdown">
-                  {/* Header info */}
                   <div className="dropdown-header">
                     <div className="dropdown-header__avatar">
                       <img
@@ -481,10 +570,8 @@ const Header = () => {
                       setShowDropdown(false);
                     }}
                   >
-                    <i className="bi bi-person" />
-                    Hồ sơ cá nhân
+                    <i className="bi bi-person" /> Hồ sơ cá nhân
                   </button>
-
                   <button
                     className="dropdown-item"
                     onClick={() => {
@@ -492,22 +579,126 @@ const Header = () => {
                       setShowDropdown(false);
                     }}
                   >
-                    <i className="bi bi-key" />
-                    Đổi mật khẩu
+                    <i className="bi bi-key" /> Đổi mật khẩu
                   </button>
-
                   <div className="dropdown-divider" />
-
                   <button className="dropdown-item danger" onClick={logout}>
-                    <i className="bi bi-box-arrow-right" />
-                    Đăng xuất
+                    <i className="bi bi-box-arrow-right" /> Đăng xuất
                   </button>
                 </div>
               )}
             </div>
+
+            {/* Hamburger – mobile */}
+            <button
+              className="user-hamburger"
+              onClick={() => setMenuOpen((v) => !v)}
+            >
+              {menuOpen ? (
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              ) : (
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                >
+                  <line x1="4" y1="7" x2="20" y2="7" />
+                  <line x1="4" y1="12" x2="20" y2="12" />
+                  <line x1="4" y1="17" x2="20" y2="17" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
       </header>
+
+      {/* ═══ MOBILE DRAWER ═══ */}
+      <div
+        className={`user-drawer${menuOpen ? " is-open" : ""}`}
+        onClick={(e) => e.target === e.currentTarget && setMenuOpen(false)}
+      >
+        <div className="user-drawer__panel">
+          {/* User info */}
+          <div className="user-drawer__user">
+            <div className="user-drawer__avatar">
+              <img
+                src={user?.avatarUrl || avatarImg}
+                alt="avatar"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = avatarImg;
+                }}
+              />
+            </div>
+            <div className="user-drawer__info">
+              <div className="user-drawer__name">
+                {user?.fullName || user?.username || ""}
+              </div>
+              <div className="user-drawer__email">{user?.email || ""}</div>
+            </div>
+          </div>
+
+          {/* Nav links */}
+          {navLinks.map((link) => (
+            <div
+              key={link.path}
+              className={`user-drawer__link${isActive(link.path) ? " is-active" : ""}`}
+              onClick={() => {
+                navigate(link.path);
+                setMenuOpen(false);
+              }}
+            >
+              <i
+                className={`bi ${link.path === "/user/class" ? "bi-mortarboard" : "bi-clock-history"}`}
+              />
+              {link.label}
+            </div>
+          ))}
+
+          <div className="user-drawer__divider" />
+
+          {/* Account */}
+          <div
+            className="user-drawer__link"
+            onClick={() => {
+              navigate("/user/profile");
+              setMenuOpen(false);
+            }}
+          >
+            <i className="bi bi-person" /> Hồ sơ cá nhân
+          </div>
+          <div
+            className="user-drawer__link"
+            onClick={() => {
+              navigate("/user/change-password");
+              setMenuOpen(false);
+            }}
+          >
+            <i className="bi bi-key" /> Đổi mật khẩu
+          </div>
+
+          <div className="user-drawer__divider" />
+
+          <div className="user-drawer__link danger" onClick={logout}>
+            <i className="bi bi-box-arrow-right" /> Đăng xuất
+          </div>
+        </div>
+      </div>
     </>
   );
 };

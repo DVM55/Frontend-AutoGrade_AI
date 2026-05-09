@@ -54,3 +54,35 @@ export const importQuestions = (file) => {
     },
   });
 };
+
+export const generateQuestionFromAI = ({
+  file,
+  quantity,
+  requirement,
+  questionType,
+}) => {
+  const formData = new FormData();
+
+  if (file) {
+    formData.append("file", file);
+  }
+
+  formData.append("quantity", quantity);
+
+  if (requirement) {
+    formData.append("requirement", requirement);
+  }
+
+  formData.append("questionType", questionType);
+
+  return api.post("/questions/generate-question-from-ai", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+
+// ───────────── GET QUESTION EXPLANATION ─────────────
+export const explainQuestion = (questionId) => {
+  return api.get(`/questions/${questionId}/explanation`);
+};

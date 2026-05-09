@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { getClassById } from "../../service/class.service";
 import ClassMemberUser from "./ClassMemberUser";
 import DocumentUser from "./DocumentUser";
+import QuizUser from "./QuizUser";
 
 const ClassDetailUser = () => {
   const { classId } = useParams();
@@ -61,7 +62,7 @@ const ClassDetailUser = () => {
 
   const TABS = [
     { key: "students", label: "Thành viên", icon: "bi-people" },
-    { key: "exams", label: "Bài kiểm tra", icon: "bi-journal-check" },
+    { key: "quizzes", label: "Bài kiểm tra", icon: "bi-journal-check" },
     { key: "documents", label: "Tài liệu", icon: "bi-folder2-open" },
   ];
 
@@ -109,14 +110,7 @@ const ClassDetailUser = () => {
             {activeTab === "students" && (
               <ClassMemberUser classId={classInfo?.id} />
             )}
-            {activeTab === "exams" && (
-              <div className="cd-empty-card">
-                <div style={{ fontSize: 44 }}>📝</div>
-                <div className="cd-empty-card__text">
-                  Chưa có bài kiểm tra nào
-                </div>
-              </div>
-            )}
+            {activeTab === "quizzes" && <QuizUser classId={classInfo?.id} />}
             {activeTab === "documents" && (
               <DocumentUser classId={classInfo?.id} />
             )}

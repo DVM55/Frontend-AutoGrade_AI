@@ -170,6 +170,7 @@ const ClassUser = () => {
   const [classes, setClasses] = useState([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [searchCode, setSearchCode] = useState("");
@@ -342,6 +343,7 @@ const ClassUser = () => {
         .cu-btn-search {
           display: flex; align-items: center; gap: 6px;
           padding: 9px 18px;
+          height: 44px;
           background: var(--blue);
           color: #fff;
           border: none; border-radius: 10px;
@@ -582,6 +584,28 @@ const ClassUser = () => {
           cursor: default; color: var(--muted); pointer-events: none;
         }
 
+        .cu-fab {
+          position: fixed;
+          bottom: 28px;
+          right: 28px;
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background: #1a73e8;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 16px rgba(26, 115, 232, 0.4);
+          transition: transform 0.2s, background 0.2s;
+          z-index: 1000;
+        }
+        .cu-fab:hover {
+          transform: scale(1.08);
+          background: #1557b0;
+        }
+
         /* ══ Responsive ══ */
         @media (max-width: 599px) {
           .cu-search__wrap { width: 100%; }
@@ -591,6 +615,11 @@ const ClassUser = () => {
           .cu-pagination { gap: 4px; }
           .cu-page-btn { min-width: 32px; height: 32px; font-size: 16px; }
           .cu-page-btn--nav { width: 32px; }
+        }
+
+        @media (max-width: 400px) {
+          .cu-btn-search span { display: none; }
+          .cu-btn-search { min-width: 40px; padding: 9px; justify-content: center; }
         }
       `}</style>
 
@@ -668,7 +697,7 @@ const ClassUser = () => {
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
-                Search
+                <span>Search</span>
               </button>
             </div>
           </div>

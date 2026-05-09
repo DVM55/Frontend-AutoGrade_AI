@@ -4,6 +4,7 @@ import { getClassById } from "../../service/class.service";
 import ClassMember from "./ClassMember";
 import ClassMemberPending from "./ClassMemberPending";
 import Document from "./Document";
+import QuizClass from "./QuizClass";
 
 const ClassDetail = () => {
   const { classId } = useParams();
@@ -114,14 +115,7 @@ const ClassDetail = () => {
             {activeTab === "approval" && (
               <ClassMemberPending classId={classInfo?.id} />
             )}
-            {activeTab === "exams" && (
-              <div className="cd-empty-card">
-                <div style={{ fontSize: 44 }}>📝</div>
-                <div className="cd-empty-card__text">
-                  Chưa có bài kiểm tra nào
-                </div>
-              </div>
-            )}
+            {activeTab === "exams" && <QuizClass classId={classInfo?.id} />}
             {activeTab === "documents" && <Document classId={classInfo?.id} />}
           </div>
         </div>
