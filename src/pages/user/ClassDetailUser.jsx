@@ -260,7 +260,6 @@ const pageStyle = `
   }
 
   .cd-root {
-    max-width: 1100px;
     margin: 0 auto;
     padding: 18px clamp(10px, 3vw, 32px) 48px;
     box-sizing: border-box;

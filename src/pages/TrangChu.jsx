@@ -167,7 +167,7 @@ const STYLES = `
   ══════════════════════════════ */
 
   .tc-section {
-    padding: 80px 40px;
+    padding: 40px 40px;
   }
 
   .tc-section--gray {

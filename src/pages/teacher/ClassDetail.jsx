@@ -263,7 +263,6 @@ const pageStyle = `
   }
 
   .cd-root {
-    max-width: 1100px;
     box-sizing: border-box;
   }
 
