@@ -1564,7 +1564,7 @@ const ImportFileModal = ({ onClose, onSuccess }) => {
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {[
                 {
-                  href: "/src/assets/excel.xlsx",
+                  href: "/assets/excel.xlsx",
                   label: "File mẫu Excel",
                   sub: ".xlsx template",
                   IconFile: IconExcel,
@@ -1572,7 +1572,7 @@ const ImportFileModal = ({ onClose, onSuccess }) => {
                   dlColor: "#217346",
                 },
                 {
-                  href: "/src/assets/word.docx",
+                  href: "/assets/word.docx",
                   label: "File mẫu Word",
                   sub: ".docx template",
                   IconFile: IconWord,
