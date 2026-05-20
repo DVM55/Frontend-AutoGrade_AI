@@ -596,6 +596,21 @@ const QuestionCard = ({
         />
       )}
 
+      {/* Question content */}
+      {question.content && (
+        <div
+          style={{
+            fontSize: "16px",
+            color: "#212529",
+            fontWeight: 500,
+            lineHeight: "1.5",
+            wordBreak: "break-word",
+          }}
+        >
+          {question.content}
+        </div>
+      )}
+
       {hasImage ? (
         isWide ? (
           <div
