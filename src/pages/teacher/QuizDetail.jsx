@@ -3896,11 +3896,11 @@ const QuizDetail = () => {
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
                         }}
-                      >{`http://localhost:5173/user/quiz/${meta.quizCode}`}</span>
+                      >{`elearninghub.io.vn/user/quiz/${meta.quizCode}`}</span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          const url = `http://localhost:5173/user/quiz/${meta.quizCode}`;
+                          const url = `elearninghub.io.vn/user/quiz/${meta.quizCode}`;
                           const el = document.createElement("textarea");
                           el.value = url;
                           el.style.position = "fixed";
