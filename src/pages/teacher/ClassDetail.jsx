@@ -45,7 +45,7 @@ const ClassDetail = () => {
       </>
     );
 
-  const joinLink = `http://localhost:5173/user/join/class/${classInfo.classCode}`;
+  const joinLink = `elearninghub.io.vn/user/join/class/${classInfo.classCode}`;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(classInfo.classCode).then(() => {
