@@ -48,8 +48,10 @@ import QuizAttemptReview from "./pages/user/QuizAttemptReview";
 import QuizStart from "./pages/user/QuizStart";
 import Quiz from "./pages/teacher/Quiz";
 import QuizDetail from "./pages/teacher/QuizDetail";
+import QuizAttemptAnswers from "./pages/teacher/QuizAttemptAnswers";
 import History from "./pages/user/History";
 import JoinQuiz from "./pages/user/JoinQuiz";
+import Chat from "./pages/user/Chat";
 
 function App() {
   const { user, loading } = useAuth();
@@ -105,6 +107,10 @@ function App() {
             <Route path="profile" element={<Profile />} />
             <Route path="change-password" element={<ChangePassword />} />
             <Route path="question-bank" element={<QuestionBank />} />
+            <Route
+              path="quiz-attempts/:attemptId/answers"
+              element={<QuizAttemptAnswers />}
+            />
           </Route>
         )}
 
@@ -126,6 +132,7 @@ function App() {
             <Route path="quizzes/:id" element={<QuizDetailUser />} />
             <Route path="history" element={<History />} />
             <Route path="quiz/:quizCode" element={<JoinQuiz />} />
+            <Route path="chatbot" element={<Chat />} />
           </Route>
         </Route>
 

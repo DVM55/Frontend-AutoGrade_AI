@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   getDocumentsByClass,
@@ -35,6 +35,53 @@ const isVideoFile = (ct) => ct?.startsWith("video/");
 const isAudioFile = (ct) => ct?.startsWith("audio/");
 const isPdfFile = (ct) => ct?.includes("pdf");
 
+const processingStatuses = {
+  UPLOADED: {
+    label: "UPLOADED",
+    icon: "bi-hourglass-split",
+    className: "du-status--pending",
+    busy: true,
+  },
+  EXTRACTING_TEXT: {
+    label: "EXTRACTING_TEXT",
+    icon: "bi-file-earmark-text",
+    className: "du-status--processing",
+    busy: true,
+  },
+  CHUNKING: {
+    label: "CHUNKING",
+    icon: "bi-diagram-3",
+    className: "du-status--processing",
+    busy: true,
+  },
+  EMBEDDING: {
+    label: "EMBEDDING",
+    icon: "bi-cpu",
+    className: "du-status--processing",
+    busy: true,
+  },
+  COMPLETED: {
+    label: "COMPLETED",
+    icon: "bi-check-circle",
+    className: "du-status--done",
+  },
+  FAILED: {
+    label: "FAILED",
+    icon: "bi-exclamation-circle",
+    className: "du-status--failed",
+  },
+};
+
+const getProcessingStatusInfo = (status) =>
+  processingStatuses[status] || {
+    label: "Chưa rõ",
+    icon: "bi-question-circle",
+    className: "du-status--unknown",
+  };
+
+const isDocumentProcessing = (status) =>
+  ["UPLOADED", "EXTRACTING_TEXT", "CHUNKING", "EMBEDDING"].includes(status);
+
 const formatDateTime = (dateStr) => {
   if (!dateStr) return "—";
   const d = new Date(dateStr);
@@ -68,7 +115,7 @@ const triggerDownload = async (fileUrl, fileName) => {
 const DocumentViewer = ({ file, onClose }) => {
   const { fileUrl, fileName, contentType } = file;
   const [textContent, setTextContent] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(() => isTextFile(contentType));
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -88,7 +135,6 @@ const DocumentViewer = ({ file, onClose }) => {
 
   useEffect(() => {
     if (isTextFile(contentType)) {
-      setLoading(true);
       fetch(fileUrl)
         .then((r) => r.arrayBuffer())
         .then((buf) => setTextContent(new TextDecoder("utf-8").decode(buf)))
@@ -451,6 +497,24 @@ const FileMenu = ({ file, onRename, onDelete }) => {
 
 // ─── File Row ─────────────────────────────────────────────────
 
+const ProcessingStatusBadge = ({ status }) => {
+  const info = getProcessingStatusInfo(status);
+
+  return (
+    <span
+      className={`du-status-badge ${info.className}`}
+      title={status || "UNKNOWN"}
+    >
+      {info.busy ? (
+        <span className="du-status-spinner" />
+      ) : (
+        <i className={`bi ${info.icon}`} />
+      )}
+      <span>{info.label}</span>
+    </span>
+  );
+};
+
 const FileRow = ({ file, onFileClick, onRename, onDelete }) => (
   <tr onClick={() => onFileClick(file)} className="du-row">
     <td>
@@ -464,6 +528,9 @@ const FileRow = ({ file, onFileClick, onRename, onDelete }) => (
         </span>
       </div>
     </td>
+    <td className="du-status-cell">
+      <ProcessingStatusBadge status={file.processingStatus} />
+    </td>
     <td className="du-date">{formatDateTime(file.updatedAt)}</td>
     <td className="du-actions-cell" onClick={(e) => e.stopPropagation()}>
       <FileMenu file={file} onRename={onRename} onDelete={onDelete} />
@@ -474,54 +541,63 @@ const FileRow = ({ file, onFileClick, onRename, onDelete }) => (
 // ─── Upload Modal ─────────────────────────────────────────────
 
 const UploadModal = ({ classId, onClose, onSuccess }) => {
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef(null);
 
-  const addFiles = (files) =>
-    setSelectedFiles((prev) => {
-      const names = new Set(prev.map((f) => f.name));
-      return [...prev, ...Array.from(files).filter((f) => !names.has(f.name))];
-    });
+  const addFile = (files) => {
+    const fileList = Array.from(files || []);
+    if (!fileList.length) return;
+    if (fileList.length > 1) {
+      toast.warning("Chỉ được chọn 1 tệp mỗi lần");
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+    setSelectedFile(fileList[0]);
+    if (inputRef.current) inputRef.current.value = "";
+  };
 
-  const removeFile = (index) =>
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  const removeFile = () => {
+    setSelectedFile(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setDragging(false);
-    addFiles(e.dataTransfer.files);
+    addFile(e.dataTransfer.files);
   };
 
   const handleUpload = async () => {
-    if (!selectedFiles.length) {
+    if (!selectedFile) {
       toast.warning("Vui lòng chọn file");
       return;
     }
     try {
       setLoading(true);
-      const uploadResults = await getPresignedUploadUrls(selectedFiles);
-      await Promise.all(
-        uploadResults.map(
-          (item, index) =>
-            new Promise((resolve, reject) => {
-              const xhr = new XMLHttpRequest();
-              xhr.open("PUT", item.uploadUrl);
-              xhr.setRequestHeader("Content-Type", item.contentType);
-              xhr.onload = () =>
-                xhr.status === 200 || xhr.status === 204 ? resolve() : reject();
-              xhr.onerror = reject;
-              xhr.send(selectedFiles[index]);
-            }),
-        ),
-      );
-      const body = uploadResults.map((item) => ({
-        objectKey: item.objectKey,
-        fileName: item.fileName,
-        contentType: item.contentType,
-        fileSize: item.fileSize,
-      }));
+      const uploadResults = await getPresignedUploadUrls([selectedFile]);
+      const uploadItem = uploadResults?.[0];
+
+      if (!uploadItem) {
+        throw new Error("Không nhận được URL tải lên");
+      }
+
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", uploadItem.uploadUrl);
+        xhr.setRequestHeader("Content-Type", uploadItem.contentType);
+        xhr.onload = () =>
+          xhr.status === 200 || xhr.status === 204 ? resolve() : reject();
+        xhr.onerror = reject;
+        xhr.send(selectedFile);
+      });
+
+      const body = {
+        objectKey: uploadItem.objectKey,
+        fileName: uploadItem.fileName,
+        contentType: uploadItem.contentType,
+      };
       await createDocument(classId, body);
       toast.success("Upload thành công");
       onSuccess();
@@ -620,71 +696,66 @@ const UploadModal = ({ classId, onClose, onSuccess }) => {
             <input
               ref={inputRef}
               type="file"
-              multiple
               hidden
-              onChange={(e) => addFiles(e.target.files || [])}
+              onChange={(e) => addFile(e.target.files || [])}
             />
           </div>
-          {selectedFiles.length > 0 && (
+          {selectedFile && (
             <div style={{ maxHeight: 220, overflowY: "auto", marginTop: 12 }}>
-              {selectedFiles.map((file, i) => (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  border: "1.5px solid #e5e7eb",
+                  borderRadius: 8,
+                  padding: "8px 12px",
+                  background: "#f9fafb",
+                }}
+              >
                 <div
-                  key={i}
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
-                    border: "1.5px solid #e5e7eb",
-                    borderRadius: 8,
-                    padding: "8px 12px",
-                    marginBottom: 8,
-                    background: "#f9fafb",
+                    gap: 8,
+                    overflow: "hidden",
                   }}
                 >
+                  <i
+                    className={`bi ${fileIconClass(selectedFile.type)}`}
+                    style={{ fontSize: 16, flexShrink: 0 }}
+                  />
                   <div
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
+                      fontWeight: 600,
+                      fontSize: 14,
                       overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      maxWidth: 280,
+                      color: "#111827",
                     }}
                   >
-                    <i
-                      className={`bi ${fileIconClass(file.type)}`}
-                      style={{ fontSize: 16, flexShrink: 0 }}
-                    />
-                    <div
-                      style={{
-                        fontWeight: 600,
-                        fontSize: 14,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        maxWidth: 280,
-                        color: "#111827",
-                      }}
-                    >
-                      {file.name}
-                    </div>
+                    {selectedFile.name}
                   </div>
-                  {!loading && (
-                    <button
-                      onClick={() => removeFile(i)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#9ca3af",
-                        cursor: "pointer",
-                        fontSize: 16,
-                        padding: 0,
-                        marginLeft: 8,
-                      }}
-                    >
-                      ✕
-                    </button>
-                  )}
                 </div>
-              ))}
+                {!loading && (
+                  <button
+                    onClick={removeFile}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#9ca3af",
+                      cursor: "pointer",
+                      fontSize: 16,
+                      padding: 0,
+                      marginLeft: 8,
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -737,7 +808,7 @@ const UploadModal = ({ classId, onClose, onSuccess }) => {
                 Đang tải lên…
               </>
             ) : (
-              `Tải lên${selectedFiles.length ? ` (${selectedFiles.length})` : ""}`
+              "Tải lên"
             )}
           </button>
         </div>
@@ -1060,28 +1131,46 @@ const Document = ({ classId }) => {
   const [renameFile, setRenameFile] = useState(null);
   const [deleteFile, setDeleteFile] = useState(null);
 
-  const fetchFiles = async (currentPage = page) => {
-    if (!classId) return;
-    try {
-      setLoading(true);
-      const res = await getDocumentsByClass(classId, {
-        page: currentPage,
-        size,
-      });
-      setFiles(res.data || []);
-      setTotalPages(res.meta.totalPages || 0);
-      setTotalElements(res.meta.totalElements || 0);
-      setPage(currentPage);
-    } catch {
-      toast.error("Không thể tải danh sách file");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchFiles = useCallback(
+    async (currentPage = 0, options = {}) => {
+      const { silent = false } = options;
+      if (!classId) return;
+      try {
+        if (!silent) setLoading(true);
+        const res = await getDocumentsByClass(classId, {
+          page: currentPage,
+          size,
+        });
+        setFiles(res.data || []);
+        setTotalPages(res.meta?.totalPages || 0);
+        setTotalElements(res.meta?.totalItems ?? res.meta?.totalElements ?? 0);
+        setPage(currentPage);
+      } catch {
+        if (!silent) toast.error("Không thể tải danh sách file");
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [classId, size],
+  );
 
   useEffect(() => {
     fetchFiles(0);
-  }, [classId]);
+  }, [fetchFiles]);
+
+  useEffect(() => {
+    const hasProcessingFiles = files.some((file) =>
+      isDocumentProcessing(file.processingStatus),
+    );
+
+    if (!classId || !hasProcessingFiles) return undefined;
+
+    const intervalId = window.setInterval(() => {
+      fetchFiles(page, { silent: true });
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [classId, fetchFiles, files, page]);
 
   return (
     <>
@@ -1115,6 +1204,7 @@ const Document = ({ classId }) => {
             <thead>
               <tr>
                 <th>Tên tệp</th>
+                <th className="du-th-status">Trạng thái</th>
                 <th className="du-th-date">Cập nhật lúc</th>
                 <th className="du-th-actions" />
               </tr>
@@ -1209,6 +1299,7 @@ const docStyle = `
   .du-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .du-table thead tr { background: #f9fafb; }
   .du-table th { padding: 11px 16px; font-size: 16px; font-weight: 600; color: #6b7280; text-align: left; border-bottom: 1.5px solid #e5e7eb; white-space: nowrap; }
+  .du-th-status { width: 170px; }
   .du-th-date { width: 160px; }
   .du-th-actions { width: 48px; }
   .du-table tbody tr.du-row { cursor: pointer; transition: background 0.13s; border-bottom: 1px solid #f3f4f6; }
@@ -1217,10 +1308,21 @@ const docStyle = `
   .du-table td { padding: 11px 16px; vertical-align: middle; overflow: hidden; }
   .du-file-name { display: flex; align-items: center; gap: 9px; min-width: 0; overflow: hidden; }
   .du-file-link { font-size: 16px; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+  .du-status-cell { width: 170px; }
+  .du-status-badge { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 5px 9px; border-radius: 999px; font-size: 14px; font-weight: 600; line-height: 1; white-space: nowrap; vertical-align: middle; }
+  .du-status-badge > span:last-child { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .du-status-badge i { flex-shrink: 0; font-size: 14px; }
+  .du-status--pending { background: #fff7ed; color: #c2410c; }
+  .du-status--processing { background: #eff6ff; color: #1d4ed8; }
+  .du-status--done { background: #ecfdf5; color: #047857; }
+  .du-status--failed { background: #fef2f2; color: #dc2626; }
+  .du-status--unknown { background: #f3f4f6; color: #6b7280; }
+  .du-status-spinner { width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: cu-spin 0.7s linear infinite; display: inline-block; flex-shrink: 0; opacity: 0.8; }
   .du-date { font-size: 16px; color: #9ca3af; white-space: nowrap; }
   .du-actions-cell { width: 48px; padding: 6px 8px 6px 0 !important; text-align: right; }
 
-  @media (max-width: 480px) { .du-th-date, .du-date { display: none; } }
+  @media (max-width: 640px) { .du-th-date, .du-date { display: none; } }
+  @media (max-width: 480px) { .du-th-status, .du-status-cell { width: 132px; } .du-status-badge { font-size: 13px; padding: 5px 7px; } }
 
   /* ── 3-dot menu ── */
   .du-menu-btn {

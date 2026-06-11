@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   getAllQuizResults,
   exportQuizResults,
@@ -14,6 +15,7 @@ const SubmissionsTab = ({ quizId }) => {
   const [searchBy, setSearchBy] = useState("userName");
   const [showFilter, setShowFilter] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const navigate = useNavigate();
 
   const handleExport = async () => {
     try {
@@ -114,6 +116,12 @@ const SubmissionsTab = ({ quizId }) => {
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+    });
+  };
+
+  const handleViewAnswers = (item) => {
+    navigate(`/teacher/quiz-attempts/${item.attemptId}/answers`, {
+      state: { submission: item, quizId },
     });
   };
 
@@ -251,6 +259,7 @@ const SubmissionsTab = ({ quizId }) => {
                       <th className="st-th st-th--center">Số câu đúng</th>
                       <th className="st-th st-th--center">Điểm</th>
                       <th className="st-th st-th--center">Thời gian nộp</th>
+                      <th className="st-th st-th--actions">Chi tiết</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -281,6 +290,16 @@ const SubmissionsTab = ({ quizId }) => {
                         </td>
                         <td className="st-td st-td--center st-td--date">
                           {formatDate(item.submittedAt)}
+                        </td>
+                        <td className="st-td st-td--actions">
+                          <button
+                            className="st-view-btn"
+                            onClick={() => handleViewAnswers(item)}
+                            title="Xem đáp án học sinh đã chọn"
+                          >
+                            <i className="bi bi-eye" />
+                            <span>Xem đáp án</span>
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -447,7 +466,7 @@ const submissionsStyle = `
   .st-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .st-table {
     width: 100%; border-collapse: collapse;
-    font-size: 16px; min-width: 640px;
+    font-size: 16px; min-width: 760px;
   }
   .st-th {
     padding: 11px 16px;
@@ -460,6 +479,7 @@ const submissionsStyle = `
   }
   .st-th--stt { width: 52px; }
   .st-th--center { text-align: center; }
+  .st-th--actions { width: 130px; text-align: center; }
   .st-tr {
     border-bottom: 1px solid #f3f4f6;
     transition: background 0.12s;
@@ -497,7 +517,28 @@ const submissionsStyle = `
     white-space: nowrap;
   }
   .st-td--date { font-size: 14px; color: #6b7280; white-space: nowrap; }
+  .st-td--actions { text-align: center; white-space: nowrap; }
   .st-user-cell { display: flex; align-items: center; gap: 9px; }
+
+  .st-view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1.5px solid #dbeafe;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .st-view-btn:hover {
+    border-color: #1a73e8;
+    background: #e8f0fe;
+  }
 
   .st-pagination {
     display: flex; justify-content: center; align-items: center;

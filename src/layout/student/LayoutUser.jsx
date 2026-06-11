@@ -12,7 +12,7 @@ const LayoutUser = () => {
       <main style={{ flex: 1 }}>
         <Outlet />
       </main>
-      <Chatbot />
+      {/* <Chatbot /> */}
     </div>
   );
 };

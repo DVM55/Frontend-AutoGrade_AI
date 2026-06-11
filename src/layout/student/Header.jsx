@@ -17,6 +17,7 @@ const Header = () => {
   const navLinks = [
     { label: "Lớp", path: "/user/class" },
     { label: "Lịch sử nộp bài", path: "/user/history" },
+    { label: "Chatbot", path: "/user/chatbot" },
   ];
 
   const fetchProfile = async () => {
